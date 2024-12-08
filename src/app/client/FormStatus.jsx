@@ -19,10 +19,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
-const FormStatus = () => {
-  const router = useRouter();
-  const { query } = router; // Get the query object from router
-  const formData = query.formData ? JSON.parse(query.formData) : null; // Safely parse formData
+const FormStatus = ({ formData }) => {
+  // Check if formData is null and handle accordingly
+  if (!formData) {
+    return (
+      <div className="p-4">
+        <h2 className="text-lg font-semibold">Error</h2>
+        <p>
+          No form data available. Please ensure you have submitted the form
+          correctly.
+        </p>
+        <Button onClick={() => router.push("/tourism-form")} className="mt-4">
+          Go Back{" "}
+        </Button>
+      </div>
+    );
+  }
 
   // Check if formData is null and handle accordingly
   if (!formData) {
@@ -115,7 +127,7 @@ const FormStatus = () => {
                   </div>
                   <div className="flex items-center">
                     <span className="font-semibold mr-2">Bathrooms:</span>
-                    <span>{formData.propertyDetails?.bathrooms || "N /A"}</span>
+                    <span>{formData.propertyDetails?.bathrooms || "N/A"}</span>
                   </div>
                   <div className="flex items-center">
                     <span className="font-semibold mr-2">Square Footage:</span>

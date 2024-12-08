@@ -1,17 +1,31 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Profile from "./profile";
+import {
+  getCurrentUser,
+  fetchAccommodations,
+  signOut,
+} from "@/services/appwrite"; // Import your Appwrite functions
 import FormStatus from "./FormStatus";
-import Settings from "./settings";
-import Header from "./header";
-import { getCurrentUser, fetchAccommodations } from "@/services/appwrite"; // Import your Appwrite functions
+import Settings from "./Settings";
+import Profile from "./Profile";
+import Header from "./Header";
+import { useRouter, useSearchParams } from "next/navigation"; // Import useSearchParams for query handling
+import { useAuthUserStore } from "@/services/user";
+import { toast } from "react-toastify";
+import Modal from "@/components/modal";
 
 const Dashboard = () => {
+  const router = useRouter(); // Initialize useRouter
+  const searchParams = useSearchParams(); // Use useSearchParams to access query params
   const [currentPage, setCurrentPage] = useState("formStatus");
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [accommodations, setAccommodations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submittedFormData, setSubmittedFormData] = useState(null); // State to hold submitted form data
+  const { authUser, clearAuthUser } = useAuthUserStore();
 
+  // Fetch user and accommodations data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,11 +44,26 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  // Handle query params for formData
+  useEffect(() => {
+    const formDataParam = searchParams.get("formData"); // Retrieve 'formData' from query params
+    if (formDataParam) {
+      try {
+        const formData = JSON.parse(formDataParam); // Parse JSON safely
+        setSubmittedFormData(formData);
+        setCurrentPage("formStatus");
+      } catch (error) {
+        console.error("Invalid formData in query params:", error);
+      }
+    }
+  }, [searchParams]);
+
   const handleLogout = async () => {
     try {
       await signOut(); // Call the signOut function from your Appwrite service
       setUser(null); // Clear user state
-      console.log("User  logged out");
+      console.log("User logged out");
+      router.push("/"); // Redirect to the home page
     } catch (error) {
       console.error("Error logging out:", error);
     }
@@ -52,10 +81,6 @@ const Dashboard = () => {
         return <FormStatus accommodations={accommodations} />;
     }
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div>

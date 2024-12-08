@@ -1,13 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Modal from "@/components/modal";
-import { useAuthUserStore } from "@/services/user";
-import { createDocument, signOut } from "@/services/appwrite";
+import { createDocument } from "@/services/appwrite";
 import BasicInfo from "./BasicInfo";
 import Facilities from "./Facilities";
 import Rooms from "./Rooms";
@@ -15,44 +14,11 @@ import Cottages from "./Cottages";
 import Services from "./Services";
 import Employees from "./Employees";
 import { v4 as uuidv4 } from "uuid";
-import { toast } from "react-toastify";
 
 export default function TourismForm() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
-  const [isLoading, setIsLoading] = useState(true);
   const methods = useForm();
-
-  const { authUser, clearAuthUser } = useAuthUserStore();
   const router = useRouter();
-
-  useEffect(() => {
-    // Validate user on component mount
-    if (authUser) {
-      if (authUser.role === "user") {
-        setIsAuthorized(true);
-        setIsLoading(false);
-      } else {
-        toast.error("Access denied! User role required.");
-        setIsAuthorized(false);
-        router.push("/login");
-      }
-    } else {
-      toast.error("You must be logged in to access this page.");
-      router.push("/login");
-    }
-  }, [authUser, router]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(); // Log out the user
-      clearAuthUser(); // Clear auth user from store
-      toast.success("Successfully logged out.");
-      router.push("/login");
-    } catch (error) {
-      toast.error("Error logging out. Please try again.");
-    }
-  };
 
   const normalizeUrl = (url) => {
     if (!/^https?:\/\//.test(url)) {
@@ -360,25 +326,15 @@ export default function TourismForm() {
         foreignmaleNum: parseInt(data.foreignmaleNum) || 0, // Number of foreign male employees
         foreignfemaleNum: parseInt(data.foreignfemaleNum) || 0, // Number of foreign female employees
       });
-      // After successful submission, navigate to FormStatus with form data
+      // After successful submission, navigate to Dashboard with form data
       router.push({
-        pathname: "/form-status", // Adjust the path to your FormStatus component
+        pathname: "/client", // Adjust the path to your Dashboard component
         query: { formData: JSON.stringify(data) }, // Pass the form data as a query parameter
       });
     } catch (error) {
       console.error("Error submitting form:", error);
     }
   };
-  if (!isAuthorized) {
-    return (
-      <Modal isOpen onClose={handleLogout}>
-        <div>
-          <h2 className="text-lg font-semibold">Access Denied</h2>
-          <p>You do not have permission to access this page.</p>
-        </div>
-      </Modal>
-    );
-  }
 
   // Map the tab order for navigation
   const tabOrder = [
@@ -408,7 +364,7 @@ export default function TourismForm() {
     }
   };
 
-  return authUser ? (
+  return (
     <FormProvider {...methods}>
       <div className="container mx-auto py-10">
         <Card>
@@ -467,12 +423,5 @@ export default function TourismForm() {
         </Card>
       </div>
     </FormProvider>
-  ) : (
-    <Modal isOpen={true} onClose={() => router.push("/login")}>
-      <div>
-        <h2 className="text-lg font-semibold">Login Required</h2>
-        <p className="mt-2">You must be logged in to access this page.</p>
-      </div>
-    </Modal>
   );
 }

@@ -52,7 +52,7 @@ export default function AuthPage() {
           case "user":
           default:
             toast.success(`Welcome back, ${currentUser.name}!`);
-            router.push("/tourism-form");
+            router.push("/client");
             break;
         }
       } else {
