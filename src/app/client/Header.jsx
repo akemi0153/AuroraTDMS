@@ -1,5 +1,5 @@
-import React from 'react';
-import { FileText, Settings, UserCircle, LogOut } from 'lucide-react';
+import React from "react";
+import { FileText, Settings, UserCircle, LogOut } from "lucide-react";
 
 const Header = ({ user, onLogout, setCurrentPage, currentPage }) => {
   const NavButton = ({ page, icon: Icon, label }) => (
@@ -7,8 +7,8 @@ const Header = ({ user, onLogout, setCurrentPage, currentPage }) => {
       onClick={() => setCurrentPage(page)}
       className={`flex items-center px-3 py-2 rounded-md transition-colors ${
         currentPage === page
-          ? 'bg-indigo-100 text-indigo-700'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+          ? "bg-indigo-100 text-indigo-700"
+          : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
       } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
     >
       <Icon size={20} className="mr-2" />
@@ -22,7 +22,6 @@ const Header = ({ user, onLogout, setCurrentPage, currentPage }) => {
         <h1 className="text-2xl font-bold text-gray-800">Client Dashboard</h1>
         <nav className="flex items-center space-x-2">
           <NavButton page="formStatus" icon={FileText} label="Form Status" />
-          <NavButton page="settings" icon={Settings} label="Settings" />
           <NavButton page="profile" icon={UserCircle} label="Profile" />
           <button
             onClick={onLogout}
@@ -38,4 +37,3 @@ const Header = ({ user, onLogout, setCurrentPage, currentPage }) => {
 };
 
 export default Header;
-

@@ -4,15 +4,12 @@ import {
   getCurrentUser,
   fetchAccommodations,
   signOut,
-} from "@/services/appwrite"; // Import your Appwrite functions
+} from "@/services/appwrite";
 import FormStatus from "./FormStatus";
-import Settings from "./Settings";
 import Profile from "./Profile";
 import Header from "./Header";
-import { useRouter, useSearchParams } from "next/navigation"; // Import useSearchParams for query handling
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthUserStore } from "@/services/user";
-import { toast } from "react-toastify";
-import Modal from "@/components/modal";
 
 const Dashboard = () => {
   const router = useRouter(); // Initialize useRouter
@@ -73,8 +70,6 @@ const Dashboard = () => {
     switch (currentPage) {
       case "formStatus":
         return <FormStatus accommodations={accommodations} />;
-      case "settings":
-        return <Settings />;
       case "profile":
         return <Profile user={user} />;
       default:

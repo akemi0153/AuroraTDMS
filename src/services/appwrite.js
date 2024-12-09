@@ -19,7 +19,7 @@ client
   .setEndpoint(appwriteConfig.endpoint)
   .setProject(appwriteConfig.projectId);
 
-const account = new Account(client);
+export const account = new Account(client);
 export const databases = new Databases(client);
 
 // Sign In
@@ -175,3 +175,39 @@ export async function fetchSpecificAccommodations(municipality) {
     throw new Error("Failed to fetch specific accommodations");
   }
 }
+
+export const getDocumentByQuery = async (collectionId, query) => {
+  try {
+    const response = await databases.listDocuments(collectionId, [query]);
+    if (response.total > 0) {
+      return response.documents[0]; // Return the first matching document
+    }
+    throw new Error("No documents found");
+  } catch (error) {
+    console.error("Error fetching document:", error);
+    throw error;
+  }
+};
+
+export const checkDuplicateAccommodation = async (
+  establishmentName,
+  businessAddress
+) => {
+  try {
+    // Assuming you have a database collection for accommodations
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.accommodationsCollectionId,
+      [
+        Query.equal("establishmentName", establishmentName),
+        Query.equal("businessAddress", businessAddress),
+      ]
+    );
+
+    // If any documents match, it's a duplicate
+    return response.documents.length > 0;
+  } catch (error) {
+    console.error("Error checking for duplicate accommodation:", error);
+    return false;
+  }
+};

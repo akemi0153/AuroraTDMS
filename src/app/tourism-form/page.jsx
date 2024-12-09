@@ -1,12 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Modal from "@/components/modal";
-import { createDocument } from "@/services/appwrite";
+import {
+  checkDuplicateAccommodation,
+  createDocument,
+  getCurrentUser,
+} from "@/services/appwrite";
 import BasicInfo from "./BasicInfo";
 import Facilities from "./Facilities";
 import Rooms from "./Rooms";
@@ -14,9 +17,12 @@ import Cottages from "./Cottages";
 import Services from "./Services";
 import Employees from "./Employees";
 import { v4 as uuidv4 } from "uuid";
+import { toast } from "react-toastify";
 
 export default function TourismForm() {
+  const [isDuplicate, setIsDuplicate] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission status
   const methods = useForm();
   const router = useRouter();
 
@@ -28,6 +34,36 @@ export default function TourismForm() {
   };
 
   const onSubmit = async (data = {}) => {
+    if (isSubmitting) return; // Prevent multiple submissions
+    setIsSubmitting(true); // Set submitting state
+
+    // Get the current user
+    const user = await getCurrentUser();
+
+    if (!user) {
+      setIsSubmitting(false); // Reset submitting state
+      throw new Error("No user logged in");
+    }
+
+    // Check for duplicate accommodation based on establishment name and business address
+    const isDuplicate = await checkDuplicateAccommodation(
+      data.establishmentName,
+      data.businessAddress
+    );
+
+    if (isDuplicate) {
+      toast.error("This accommodation has already been submitted", {
+        description:
+          "An entry with the same establishment name and address already exists.",
+        duration: 5000,
+      });
+      setIsDuplicate(true); // Set duplicate state
+      setIsSubmitting(false); // Reset submitting state
+      return; // Stop submission
+    } else {
+      setIsDuplicate(false); // Reset duplicate state
+    }
+
     const accommodationId = uuidv4(); // Generate a unique ID for this accommodation
     try {
       // Normalize website URL
@@ -138,6 +174,7 @@ export default function TourismForm() {
       // Save Basic Info
       await createDocument("6741d7f2000200706b21", {
         accommodationId,
+        userId: user.$id,
         municipality,
         establishmentName,
         businessAddress,
@@ -153,6 +190,7 @@ export default function TourismForm() {
         twitter,
         website: normalizedWebsite,
         bookingCompany,
+        status: "pending",
       });
 
       // Save Facilities
@@ -326,11 +364,7 @@ export default function TourismForm() {
         foreignmaleNum: parseInt(data.foreignmaleNum) || 0, // Number of foreign male employees
         foreignfemaleNum: parseInt(data.foreignfemaleNum) || 0, // Number of foreign female employees
       });
-      // After successful submission, navigate to Dashboard with form data
-      router.push({
-        pathname: "/client", // Adjust the path to your Dashboard component
-        query: { formData: JSON.stringify(data) }, // Pass the form data as a query parameter
-      });
+      router.push("/client");
     } catch (error) {
       console.error("Error submitting form:", error);
     }
@@ -363,6 +397,23 @@ export default function TourismForm() {
       setActiveTab(tabOrder[currentIndex - 1]); // Move to the previous tab
     }
   };
+
+  // Effect to check for duplicates when relevant fields change
+  useEffect(() => {
+    const checkForDuplicate = async () => {
+      const { establishmentName, businessAddress } = methods.getValues();
+      if (establishmentName && businessAddress) {
+        const duplicate = await checkDuplicateAccommodation(
+          establishmentName,
+          businessAddress
+        );
+        setIsDuplicate(duplicate);
+      }
+    };
+
+    const timeoutId = setTimeout(checkForDuplicate, 500); // Debounce the check
+    return () => clearTimeout(timeoutId); // Cleanup on unmount
+  }, [methods.watch("establishmentName"), methods.watch("businessAddress")]);
 
   return (
     <FormProvider {...methods}>
