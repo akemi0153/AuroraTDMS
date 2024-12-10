@@ -99,7 +99,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-400 to-indigo-600 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#669bbc] to-indigo-600 flex items-center justify-center p-4">
       <ToastContainer />
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
