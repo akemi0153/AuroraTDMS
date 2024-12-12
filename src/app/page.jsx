@@ -3,7 +3,31 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { MapPin, Star, Coffee, Wifi, Dumbbell, Search, Map, LifeBuoy, Sparkles, Car, ChevronDown, Calendar, Sun, Waves, Mountain, Users, Phone, Mail, Globe, Clock } from 'lucide-react';
+import {
+  MapPin,
+  Star,
+  Coffee,
+  Wifi,
+  Dumbbell,
+  Search,
+  Map,
+  LifeBuoy,
+  Sparkles,
+  Car,
+  ChevronDown,
+  Sun,
+  Waves,
+  Mountain,
+  Users,
+  Phone,
+  Mail,
+  Globe,
+  Clock,
+  Facebook,
+  Twitter,
+  Instagram,
+  Youtube,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,13 +54,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addDays } from "date-fns";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const hotels = [
   {
@@ -44,67 +75,48 @@ const hotels = [
     name: "Costa Pacifica",
     rating: 4.5,
     price: 8250,
-    image:
-      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/bb/65/a8/costa-pacifica.jpg?w=1200&h=-1&s=1",
+    image: "./image/costa.png",
     location: "Baler, Aurora",
     amenities: ["wifi", "gym", "restaurant", "pool", "spa"],
-    description: "Luxurious beachfront resort with stunning ocean views and world-class amenities.",
-    reviews: [
-      { id: 1, user: "John D.", rating: 5, comment: "Absolutely stunning resort with impeccable service!" },
-      { id: 2, user: "Sarah M.", rating: 4, comment: "Beautiful location, but the food could be better." },
-      { id: 3, user: "Mike R.", rating: 5, comment: "Perfect getaway spot. Will definitely come back!" },
-    ],
+    description:
+      "Luxurious beachfront resort with stunning ocean views and world-class amenities.",
     contact: {
       phone: "+63 2 8519 4249",
       email: "info@costapacificabaler.com",
       website: "https://www.costapacificabaler.com",
     },
-    checkIn: "2:00 PM",
-    checkOut: "12:00 PM",
-  },
+},
   {
     id: 2,
     name: "Bay's Inn Resort",
     rating: 4.2,
     price: 6600,
-    image:
-      "https://pix8.agoda.net/property/60263241/0/ea45117c4c9930d33d6b9749a4a5055c.jpeg?ce=0&s=1024x",
+    image: "/image/CASA.jpg",
     location: "Baler, Aurora",
     amenities: ["wifi", "restaurant", "parking"],
-    description: "Cozy beachfront resort offering comfortable accommodations and easy access to Sabang Beach.",
-    reviews: [
-      { id: 1, user: "Emily L.", rating: 4, comment: "Great location and friendly staff. Rooms are basic but clean." },
-      { id: 2, user: "David K.", rating: 5, comment: "Excellent value for money. The restaurant serves delicious local cuisine." },
-    ],
+    description:
+      "Cozy beachfront resort offering comfortable accommodations and easy access to Sabang Beach.",
     contact: {
       phone: "+63 919 991 3075",
       email: "baysinnresort@gmail.com",
       website: "https://www.baysinnresort.com",
     },
-    checkIn: "2:00 PM",
-    checkOut: "12:00 PM",
   },
   {
     id: 3,
     name: "Aliya Surf Camp",
     rating: 4.0,
     price: 5500,
-    image:
-      "https://media-cdn.tripadvisor.com/media/photo-s/12/a7/3f/e8/img-20180324-064351-largejpg.jpg",
+    image: "/image/CASA.jpg",
     location: "Baler, Aurora",
     amenities: ["wifi", "parking", "restaurant"],
-    description: "Laid-back surf camp offering surf lessons, board rentals, and beachfront accommodations.",
-    reviews: [
-      { id: 1, user: "Alex S.", rating: 4, comment: "Great spot for surfing enthusiasts. Instructors are knowledgeable and friendly." },
-      { id: 2, user: "Lisa M.", rating: 3, comment: "Basic accommodations, but perfect for those focused on surfing." },
-    ],
+    description:
+      "Laid-back surf camp offering surf lessons, board rentals, and beachfront accommodations.",
     contact: {
       phone: "+63 917 794 7749",
       email: "aliyasurfcamp@gmail.com",
       website: "https://www.aliyasurfcamp.com",
     },
-    checkIn: "1:00 PM",
-    checkOut: "11:00 AM",
   },
 ];
 
@@ -120,17 +132,20 @@ const amenitiesOptions = [
 const attractions = [
   {
     name: "Sabang Beach",
-    description: "A 2-kilometer stretch of gray sand beach known for its surfing waves. Perfect for beginners and experienced surfers alike.",
+    description:
+      "A 2-kilometer stretch of gray sand beach known for its surfing waves. Perfect for beginners and experienced surfers alike.",
     icon: Waves,
   },
   {
     name: "Dicasalarin Cove",
-    description: "A secluded white sand beach surrounded by rolling hills. Offers breathtaking views and is ideal for swimming and picnics.",
+    description:
+      "A secluded white sand beach surrounded by rolling hills. Offers breathtaking views and is ideal for swimming and picnics.",
     icon: Sun,
   },
   {
     name: "Diguisit Falls",
-    description: "A series of cascading waterfalls surrounded by lush greenery. A great spot for nature lovers and photographers.",
+    description:
+      "A series of cascading waterfalls surrounded by lush greenery. A great spot for nature lovers and photographers.",
     icon: Mountain,
   },
 ];
@@ -142,7 +157,6 @@ function HotelListingComponent() {
   const [sortOption, setSortOption] = useState("rating");
   const [showMap, setShowMap] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [dateRange, setDateRange] = useState({ from: new Date(), to: addDays(new Date(), 7) });
   const [selectedHotel, setSelectedHotel] = useState(null);
   const hotelsPerPage = 4;
 
@@ -150,7 +164,10 @@ function HotelListingComponent() {
     let result = hotels.filter(
       (hotel) =>
         hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        (selectedAmenities.length === 0 || selectedAmenities.every((amenity) => hotel.amenities.includes(amenity)))
+        (selectedAmenities.length === 0 ||
+          selectedAmenities.every((amenity) =>
+            hotel.amenities.includes(amenity)
+          ))
     );
 
     if (sortOption === "rating") {
@@ -167,7 +184,10 @@ function HotelListingComponent() {
 
   const indexOfLastHotel = currentPage * hotelsPerPage;
   const indexOfFirstHotel = indexOfLastHotel - hotelsPerPage;
-  const currentHotels = filteredHotels.slice(indexOfFirstHotel, indexOfLastHotel);
+  const currentHotels = filteredHotels.slice(
+    indexOfFirstHotel,
+    indexOfLastHotel
+  );
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -221,9 +241,15 @@ function HotelListingComponent() {
             </h1>
           </div>
           <nav className="flex items-center space-x-4">
-            <Link href="/about"><Button variant="ghost">About</Button></Link>
-            <Link href="/contact"><Button variant="ghost">Contact</Button></Link>
-            <Link href="/faq"><Button variant="ghost">FAQ</Button></Link>
+            <Link href="/about">
+              <Button variant="ghost">About</Button>
+            </Link>
+            <Link href="/contact">
+              <Button variant="ghost">Contact</Button>
+            </Link>
+            <Link href="/faq">
+              <Button variant="ghost">FAQ</Button>
+            </Link>
           </nav>
         </div>
       </header>
@@ -242,6 +268,16 @@ function HotelListingComponent() {
             Find your perfect stay in the heart of Aurora
           </p>
         </motion.div>
+        <Card className="mb-8 overflow-hidden">
+          <CardContent className="p-0 relative">
+            <img
+              src="./image/aurora.jpg"
+              alt="Explore Central Aurora"
+              className="w-full h-[400px] object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center"></div>
+          </CardContent>
+        </Card>
 
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -306,36 +342,6 @@ function HotelListingComponent() {
                 <SelectItem value="price-high">Price (High to Low)</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <Label>Check-in / Check-out</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {dateRange.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                        {format(dateRange.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
           </div>
           <Button
             variant="outline"
@@ -412,7 +418,9 @@ function HotelListingComponent() {
                             <Star className="h-5 w-5 text-yellow-400 mr-1" />
                             {hotel.rating.toFixed(1)}
                           </CardDescription>
-                          <p className="text-sm text-gray-600 mt-2">{hotel.description}</p>
+                          <p className="text-sm text-gray-600 mt-2">
+                            {hotel.description}
+                          </p>
                           <div className="mt-4 flex flex-wrap gap-2">
                             {hotel.amenities.map((amenity) => {
                               const amenityOption = amenitiesOptions.find(
@@ -434,7 +442,10 @@ function HotelListingComponent() {
                           </div>
                         </CardContent>
                         <CardFooter>
-                          <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white" onClick={() => openHotelDetails(hotel)}>
+                          <Button
+                            className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+                            onClick={() => openHotelDetails(hotel)}
+                          >
                             View Details
                           </Button>
                         </CardFooter>
@@ -443,8 +454,12 @@ function HotelListingComponent() {
                   ))
                 ) : (
                   <div className="col-span-full text-center py-10">
-                    <p className="text-xl font-semibold text-gray-600">No hotels found matching your criteria.</p>
-                    <p className="text-gray-500 mt-2">Try adjusting your filters or search terms.</p>
+                    <p className="text-xl font-semibold text-gray-600">
+                      No hotels found matching your criteria.
+                    </p>
+                    <p className="text-gray-500 mt-2">
+                      Try adjusting your filters or search terms.
+                    </p>
                   </div>
                 )}
               </motion.div>
@@ -471,8 +486,17 @@ function HotelListingComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
           className="mb-8"
+        ></motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="mb-8"
         >
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Popular Attractions</h3>
+          <h3 className="text-2xl font-bold text-gray-800 mb-4">
+            Popular Attractions
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {attractions.map((attraction) => (
               <Card key={attraction.name}>
@@ -488,7 +512,11 @@ function HotelListingComponent() {
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Link href={`/attractions/${attraction.name.toLowerCase().replace(/\s+/g, '-')}`}>
+                  <Link
+                    href={`/attractions/${attraction.name
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                  >
                     <Button variant="outline">Learn More</Button>
                   </Link>
                 </CardFooter>
@@ -503,13 +531,35 @@ function HotelListingComponent() {
           transition={{ duration: 0.5, delay: 0.8 }}
           className="mb-8"
         >
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Why Choose Central Aurora?</h3>
+          <h3 className="text-2xl font-bold text-gray-800 mb-4">
+            Why Choose Central Aurora?
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: "Pristine Beaches", icon: Sun, description: "Miles of untouched coastline perfect for surfing and relaxation." },
-              { title: "Rich Culture", icon: Users, description: "Experience the warm hospitality and traditions of Aurora." },
-              { title: "Adventure Sports", icon: Mountain, description: "From surfing to trekking, adventure awaits at every corner." },
-              { title: "Natural Wonders", icon: Sparkles, description: "Explore waterfalls, caves, and lush forests in this natural paradise." },
+              {
+                title: "Pristine Beaches",
+                icon: Sun,
+                description:
+                  "Miles of untouched coastline perfect for surfing and relaxation.",
+              },
+              {
+                title: "Rich Culture",
+                icon: Users,
+                description:
+                  "Experience the warm hospitality and traditions of Aurora.",
+              },
+              {
+                title: "Adventure Sports",
+                icon: Mountain,
+                description:
+                  "From surfing to trekking, adventure awaits at every corner.",
+              },
+              {
+                title: "Natural Wonders",
+                icon: Sparkles,
+                description:
+                  "Explore waterfalls, caves, and lush forests in this natural paradise.",
+              },
             ].map((item) => (
               <Card key={item.title}>
                 <CardHeader>
@@ -525,11 +575,125 @@ function HotelListingComponent() {
             ))}
           </div>
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 1 }}
+          className="mb-8"
+        ></motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 1.2 }}
+          className="mb-8"
+        >
+          <h3 className="text-2xl font-bold text-gray-800 mb-4">
+            Newsletter Subscription
+          </h3>
+          <Card>
+            <CardHeader>
+              <CardTitle>Stay Updated</CardTitle>
+              <CardDescription>
+                Subscribe to our newsletter for the latest travel tips, deals,
+                and Aurora news.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={(e) => e.preventDefault()} className="flex gap-4">
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="flex-grow"
+                />
+                <Button type="submit">Subscribe</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
       </main>
 
-      <footer className="bg-white py-8 mt-8">
-        <div className="container mx-auto text-center">
-          <p>&copy; 2024 Central Aurora Explorer. All rights reserved.</p>
+      <footer className="bg-white py-12 mt-8">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h4 className="text-lg font-semibold mb-4">About Us</h4>
+              <p className="text-sm text-gray-600">
+                Central Aurora Explorer is your gateway to discovering the
+                beauty and adventure of Aurora Province, Philippines.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/about"
+                    className="text-sm text-gray-600 hover:text-teal-600"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/contact"
+                    className="text-sm text-gray-600 hover:text-teal-600"
+                  >
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/faq"
+                    className="text-sm text-gray-600 hover:text-teal-600"
+                  >
+                    FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/privacy-policy"
+                    className="text-sm text-gray-600 hover:text-teal-600"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Contact Us</h4>
+              <address className="text-sm text-gray-600 not-italic">
+                <p>123 Explorer Street</p>
+                <p>Baler, Aurora</p>
+                <p>Philippines</p>
+                <p className="mt-2">Phone: +63 123 456 7890</p>
+                <p>Email: info@centralaurora.com</p>
+              </address>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Follow Us</h4>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-600 hover:text-teal-600">
+                  <Facebook />
+                </a>
+                <a href="#" className="text-gray-600 hover:text-teal-600">
+                  <Twitter />
+                </a>
+                <a href="#" className="text-gray-600 hover:text-teal-600">
+                  <Instagram />
+                </a>
+                <a href="#" className="text-gray-600 hover:text-teal-600">
+                  <Youtube />
+                </a>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-200 mt-8 pt-8 text-center">
+            <p className="text-sm text-gray-600">
+              &copy; 2024 Central Aurora Explorer. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
 
@@ -543,19 +707,30 @@ function HotelListingComponent() {
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <img src={selectedHotel.image} alt={selectedHotel.name} className="w-full h-64 object-cover rounded-lg" />
+                  <img
+                    src={selectedHotel.image}
+                    alt={selectedHotel.name}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
                   <div className="mt-4">
                     <h4 className="font-semibold mb-2">Description</h4>
-                    <p className="text-sm text-gray-600">{selectedHotel.description}</p>
+                    <p className="text-sm text-gray-600">
+                      {selectedHotel.description}
+                    </p>
                   </div>
                   <div className="mt-4">
                     <h4 className="font-semibold mb-2">Amenities</h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedHotel.amenities.map((amenity) => {
-                        const amenityOption = amenitiesOptions.find((a) => a.value === amenity);
+                        const amenityOption = amenitiesOptions.find(
+                          (a) => a.value === amenity
+                        );
                         if (amenityOption) {
                           return (
-                            <span key={amenity} className="bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-0.5 rounded flex items-center">
+                            <span
+                              key={amenity}
+                              className="bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-0.5 rounded flex items-center"
+                            >
                               <amenityOption.icon className="h-3 w-3 mr-1" />
                               {amenityOption.label}
                             </span>
@@ -567,92 +742,45 @@ function HotelListingComponent() {
                   </div>
                 </div>
                 <div>
-                  <Tabs defaultValue="details">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="details">Details</TabsTrigger>
-                      <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                      <TabsTrigger value="location">Location</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="details">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Hotel Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="flex items-center">
-                            <Clock className="h-5 w-5 mr-2 text-teal-600" />
-                            <span>Check-in: {selectedHotel.checkIn} | Check-out: {selectedHotel.checkOut}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Phone className="h-5 w-5 mr-2 text-teal-600" />
-                            <span>{selectedHotel.contact.phone}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Mail className="h-5 w-5 mr-2 text-teal-600" />
-                            <span>{selectedHotel.contact.email}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Globe className="h-5 w-5 mr-2 text-teal-600" />
-                            <a href={selectedHotel.contact.website} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
-                              Visit Website
-                            </a>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    <TabsContent value="reviews">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Guest Reviews</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {selectedHotel.reviews.map((review) => (
-                              <div key={review.id} className="border-b pb-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center">
-                                    <Avatar className="h-8 w-8 mr-2">
-                                      <AvatarFallback>{review.user[0]}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-semibold">{review.user}</span>
-                                  </div>
-                                  <div className="flex items-center">
-                                    <Star className="h-5 w-5 text-yellow-400 mr-1" />
-                                    <span>{review.rating}</span>
-                                  </div>
-                                </div>
-                                <p className="mt-2 text-sm text-gray-600">{review.comment}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    <TabsContent value="location">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Location</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="aspect-w-16 aspect-h-9">
-                            <iframe
-                              src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3941.9999999999995!2d121.56000000000002!3d15.760000000000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c00000000001%3A0x0000000000000000!2s${encodeURIComponent(selectedHotel.name)}%2C%20Baler%2C%20Aurora%2C%20Philippines!5e0!3m2!1sen!2sus!4v1610000000000!5m2!1sen!2sus`}
-                              width="100%"
-                              height="100%"
-                              style={{ border: 0 }}
-                              allowFullScreen=""
-                              loading="lazy"
-                              referrerPolicy="no-referrer-when-downgrade"
-                            ></iframe>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                  </Tabs>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Hotel Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center">
+                        <Clock className="h-5 w-5 mr-2 text-teal-600" />
+                        <span>
+                          Check-in: {selectedHotel.checkIn} | Check-out:{" "}
+                          {selectedHotel.checkOut}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Phone className="h-5 w-5 mr-2 text-teal-600" />
+                        <span>{selectedHotel.contact.phone}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Mail className="h-5 w-5 mr-2 text-teal-600" />
+                        <span>{selectedHotel.contact.email}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Globe className="h-5 w-5 mr-2 text-teal-600" />
+                        <a
+                          href={selectedHotel.contact.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-teal-600 hover:underline"
+                        >
+                          Visit Website
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
               <div className="mt-6">
-                <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">Book Now</Button>
+                <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+                  Book Now
+                </Button>
               </div>
             </>
           )}
@@ -663,4 +791,3 @@ function HotelListingComponent() {
 }
 
 export default HotelListingComponent;
-

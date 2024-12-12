@@ -22,7 +22,7 @@ export default function BasicInfo() {
             })}
             className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
-            <option value="">Select Municipality</option>
+            <option value="" disabled selected>Select Municipality</option>
             <option value="Baler">Baler</option>
             <option value="San Luis">San Luis</option>
             <option value="Maria Aurora">Maria Aurora</option>
