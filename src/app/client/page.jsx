@@ -8,8 +8,6 @@ import {
 import FormStatus from "./FormStatus";
 import Profile from "./Profile";
 import Header from "./Header";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthUserStore } from "@/services/user";
 
 const Dashboard = () => {
   const router = useRouter(); // Initialize useRouter

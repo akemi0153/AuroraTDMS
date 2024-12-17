@@ -17,16 +17,9 @@ import "react-datepicker/dist/react-datepicker.css";
 import {
   XIcon,
   LogOut,
-  Calendar,
-  Building2,
-  Search,
   Menu,
-  User,
-  Bell,
   Settings,
 } from "lucide-react";
-import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -138,36 +131,6 @@ export default function MunicipalityInspectorDashboard() {
     }
   };
 
-  const handleAppointmentSubmit = () => {
-    if (appointmentDate && appointmentDate >= new Date()) {
-      toast.success(
-        `Appointment set for ${
-          selectedEstablishment.establishmentName
-        } on ${appointmentDate.toLocaleString()}`
-      );
-      setAppointmentModalOpen(false);
-    } else if (appointmentDate < new Date()) {
-      toast.error(
-        "Cannot set an appointment in the past. Please select a future date."
-      );
-    } else {
-      toast.error("Please select a valid date.");
-    }
-  };
-
-  const filteredAccommodations = accommodations.filter(
-    (accommodation) =>
-      (selectedMunicipality === "All" ||
-        accommodation.municipality === selectedMunicipality) &&
-      (accommodation.establishmentName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-        accommodation.municipality
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()))
-  );
-
-  if (!authUser) {
     return (
       <Modal isOpen={isModalOpen} onClose={handleLogout} title="Login Required">
         <div className="mt-2">
