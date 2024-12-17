@@ -16,6 +16,10 @@ import {
   Bell,
   Settings,
   LogOut,
+  Clock,
+  CheckCircle,
+  XCircle,
+  FileCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,18 +30,42 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { fetchSpecificAccommodations } from "@/services/appwrite";
+import { databases } from "@/services/appwrite";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 export default function SanLuisPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [accommodations, setAccommodations] = useState([]);
-  const [approvedList, setApprovedList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAppointmentModalOpen, setAppointmentModalOpen] = useState(false);
   const [selectedEstablishment, setSelectedEstablishment] = useState(null);
   const [appointmentDate, setAppointmentDate] = useState(null);
+  const [isViewModalOpen, setViewModalOpen] = useState(false);
+  const [viewEstablishment, setViewEstablishment] = useState(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -48,7 +76,7 @@ export default function SanLuisPage() {
 
       try {
         const data = await fetchSpecificAccommodations("San Luis");
-        setAccommodations(data); // Set the fetched accommodations
+        setAccommodations(data);
       } catch (err) {
         setError("Failed to fetch accommodations");
         toast.error("Error fetching data");
@@ -60,50 +88,152 @@ export default function SanLuisPage() {
     loadAccommodations();
   }, []);
 
-  // Filtered accommodations based on search
   const filteredAccommodations = accommodations.filter((acc) =>
     acc.establishmentName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Logout handler
   const handleLogout = () => {
     localStorage.clear();
     sessionStorage.clear();
-    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     toast.success("Logged out successfully");
     router.push("/login");
   };
 
   const handleSetAppointment = (establishment) => {
-    setSelectedEstablishment(establishment);
-    setAppointmentModalOpen(true);
+    if (establishment.status === "ApprovedAttachment") {
+      toast.error(
+        "An appointment has already been set for this establishment."
+      );
+    } else if (establishment.status === "approved") {
+      setSelectedEstablishment(establishment);
+      setAppointmentModalOpen(true);
+    } else {
+      toast.error("You can only set appointments for approved establishments.");
+    }
   };
 
-  const handleAppointmentSubmit = () => {
+  const handleAppointmentSubmit = async () => {
     if (!appointmentDate) {
       toast.error("Please select a date and time");
       return;
     }
 
-    // Move establishment to approved list
-    setApprovedList((prev) => [...prev, selectedEstablishment]);
-    setAccommodations((prev) =>
-      prev.filter((item) => item.$id !== selectedEstablishment.$id)
-    );
+    try {
+      const formattedDate = appointmentDate.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 
-    // Reset modal state
-    setAppointmentModalOpen(false);
-    setSelectedEstablishment(null);
-    setAppointmentDate(null);
+      await databases.updateDocument(
+        "672cfccb002f456cb332", // Replace with your database ID
+        "6741d7f2000200706b21", // Replace with your collection ID
+        selectedEstablishment.$id,
+        {
+          status: "approved",
+          appointmentDate: formattedDate,
+        }
+      );
 
-    toast.success("Appointment successfully set!");
+      setAccommodations(
+        accommodations.map((acc) =>
+          acc.$id === selectedEstablishment.$id
+            ? {
+                ...acc,
+                status: "ApprovedAttachment",
+                appointmentDate: formattedDate,
+              }
+            : acc
+        )
+      );
+
+      setAppointmentModalOpen(false);
+      setSelectedEstablishment(null);
+      setAppointmentDate(null);
+
+      toast.success("Appointment successfully set!");
+    } catch (error) {
+      console.error("Error setting appointment:", error);
+      toast.error("Failed to set appointment. Please try again.");
+    }
+  };
+
+  const handleViewEstablishment = (establishment) => {
+    setViewEstablishment(establishment);
+    setViewModalOpen(true);
+  };
+
+  const updateStatusInDatabase = async (id, status) => {
+    try {
+      await databases.updateDocument(
+        "672cfccb002f456cb332", // Replace with your database ID
+        "6741d7f2000200706b21", // Replace with your collection ID
+        id,
+        { status: status }
+      );
+      console.log(`Status updated in database for establishment ${id}`);
+    } catch (error) {
+      console.error("Error updating status in database:", error);
+      toast.error("Failed to update status in database. Please try again.");
+    }
+  };
+
+  const handleApprovalStatus = async (id, status) => {
+    try {
+      const establishment = accommodations.find((acc) => acc.$id === id);
+      if (
+        establishment.status === "approved" ||
+        establishment.status === "ApprovedAttachment"
+      ) {
+        toast.error("Cannot change status of an approved form.");
+        return;
+      }
+      await updateStatusInDatabase(id, status);
+      setAccommodations(
+        accommodations.map((acc) => (acc.$id === id ? { ...acc, status } : acc))
+      );
+      toast.success(`Establishment status updated to ${status}.`);
+    } catch (error) {
+      console.error("Error updating approval status:", error);
+      toast.error("Failed to update status. Please try again.");
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-500";
+      case "approved":
+        return "bg-green-500";
+      case "declined":
+        return "bg-red-500";
+      case "ApprovedAttachment":
+        return "bg-blue-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "pending":
+        return <Clock className="h-5 w-5" />;
+      case "approved":
+        return <CheckCircle className="h-5 w-5" />;
+      case "declined":
+        return <XCircle className="h-5 w-5" />;
+      case "ApprovedAttachment":
+        return <FileCheck className="h-5 w-5" />;
+      default:
+        return null;
+    }
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <aside
-        className={`fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0`}
-      >
+      <aside className="fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0">
         <div className="flex h-16 items-center justify-center border-b">
           <span className="text-xl font-semibold">San Luis Dashboard</span>
         </div>
@@ -175,30 +305,56 @@ export default function SanLuisPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {loading ? "Loading..." : accommodations.length + approvedList.length}
+                  {accommodations.length}
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Pending List</CardTitle>
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{accommodations.length}</div>
+                <div className="text-2xl font-bold">
+                  {
+                    accommodations.filter((acc) => acc.status === "pending")
+                      .length
+                  }
+                </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Approved List</CardTitle>
+                <CardTitle className="text-sm font-medium">Approved</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{approvedList.length}</div>
+                <div className="text-2xl font-bold">
+                  {
+                    accommodations.filter((acc) => acc.status === "approved")
+                      .length
+                  }
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">
+                  Appointments Set
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {
+                    accommodations.filter(
+                      (acc) => acc.status === "ApprovedAttachment"
+                    ).length
+                  }
+                </div>
               </CardContent>
             </Card>
           </div>
           <div className="mt-8">
-            <h2 className="text-2xl font-semibold">Pending Establishments</h2>
-            <Card className="mt-4">
+            <h2 className="text-2xl font-semibold mb-4">Establishments</h2>
+            <Card>
               {loading ? (
                 <div className="flex h-32 items-center justify-center">
                   <p>Loading data...</p>
@@ -213,27 +369,75 @@ export default function SanLuisPage() {
                     <TableRow>
                       <TableHead>Establishment Name</TableHead>
                       <TableHead>Municipality</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredAccommodations.map((accommodation) => (
-                      <TableRow
-                        key={
-                          accommodation.$id || accommodation.establishmentName
-                        }
-                      >
+                      <TableRow key={accommodation.$id}>
                         <TableCell className="font-medium">
                           {accommodation.establishmentName}
                         </TableCell>
                         <TableCell>{accommodation.municipality}</TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            onClick={() => handleSetAppointment(accommodation)}
-                          >
-                            Set Appointment
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Badge
+                                className={`cursor-pointer ${getStatusColor(
+                                  accommodation.status
+                                )}`}
+                              >
+                                {getStatusIcon(accommodation.status)}
+                                <span className="ml-2">
+                                  {accommodation.status}
+                                </span>
+                              </Badge>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleApprovalStatus(
+                                    accommodation.$id,
+                                    "approved"
+                                  )
+                                }
+                              >
+                                Approve
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleApprovalStatus(
+                                    accommodation.$id,
+                                    "declined"
+                                  )
+                                }
+                              >
+                                Decline
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                handleSetAppointment(accommodation)
+                              }
+                              disabled={accommodation.status !== "approved"}
+                            >
+                              Set Appointment
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                handleViewEstablishment(accommodation)
+                              }
+                            >
+                              View Details
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -246,9 +450,51 @@ export default function SanLuisPage() {
               )}
             </Card>
           </div>
+          <div className="mt-8">
+            <h2 className="text-2xl font-semibold mb-4">Form Status History</h2>
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Establishment Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {accommodations.map((accommodation) => (
+                    <TableRow key={accommodation.$id}>
+                      <TableCell className="font-medium">
+                        {accommodation.establishmentName}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(accommodation.status)}>
+                          {getStatusIcon(accommodation.status)}
+                          <span className="ml-2">{accommodation.status}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(accommodation.$updatedAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "2-digit",
+                          }
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </div>
         </div>
       </main>
-      <Sheet open={isAppointmentModalOpen} onOpenChange={setAppointmentModalOpen}>
+      <Sheet
+        open={isAppointmentModalOpen}
+        onOpenChange={setAppointmentModalOpen}
+      >
         <SheetContent>
           <SheetHeader>
             <SheetTitle>
@@ -284,6 +530,78 @@ export default function SanLuisPage() {
           </div>
         </SheetContent>
       </Sheet>
+      <Dialog open={isViewModalOpen} onOpenChange={setViewModalOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{viewEstablishment?.establishmentName}</DialogTitle>
+            <DialogDescription>Establishment Details</DialogDescription>
+          </DialogHeader>
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList>
+              <TabsTrigger value="details">Accommodations</TabsTrigger>
+              <TabsTrigger value="services">Services</TabsTrigger>
+              <TabsTrigger value="rooms">Rooms</TabsTrigger>
+              <TabsTrigger value="cottages">Cottages</TabsTrigger>
+              <TabsTrigger value="facilities">Facilities</TabsTrigger>
+              <TabsTrigger value="employees">Employees</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details">
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+                {viewEstablishment &&
+                  Object.entries(viewEstablishment)
+                    .filter(
+                      ([key]) =>
+                        ![
+                          "userId",
+                          "date",
+                          "time",
+                          "$id",
+                          "$createdAt",
+                          "$updatedAt",
+                          "$permissions",
+                          "$databaseId",
+                          "$collectionId",
+                        ].includes(key)
+                    )
+                    .map(([key, value]) => (
+                      <div key={key} className="mb-2">
+                        <strong className="capitalize">
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </strong>{" "}
+                        <span>{value}</span>
+                      </div>
+                    ))}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="services">
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+                {/* Add services rendering logic here */}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="rooms">
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+                {/* Add rooms rendering logic here */}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="cottages">
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+                {/* Add cottages rendering logic here */}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="facilities">
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+                {/* Add facilities rendering logic here */}
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="employees">
+              <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+                {/* Add employees rendering logic here */}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
       <ToastContainer />
     </div>
   );

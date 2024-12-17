@@ -1,15 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  checkDuplicateAccommodation,
-  createDocument,
-  getCurrentUser,
-} from "@/services/appwrite";
+import Modal from "@/components/modal";
+import { useAuthUserStore } from "@/services/user";
+import { createDocument, signOut } from "@/services/appwrite";
 import BasicInfo from "./BasicInfo";
 import Facilities from "./Facilities";
 import Rooms from "./Rooms";
@@ -20,11 +18,41 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "react-toastify";
 
 export default function TourismForm() {
-  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
-  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission status
+  const [isLoading, setIsLoading] = useState(true);
   const methods = useForm();
+
+  const { authUser, clearAuthUser } = useAuthUserStore();
   const router = useRouter();
+
+  useEffect(() => {
+    // Validate user on component mount
+    if (authUser) {
+      if (authUser.role === "user") {
+        setIsAuthorized(true);
+        setIsLoading(false);
+      } else {
+        toast.error("Access denied! User role required.");
+        setIsAuthorized(false);
+        router.push("/login");
+      }
+    } else {
+      toast.error("You must be logged in to access this page.");
+      router.push("/login");
+    }
+  }, [authUser, router]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(); // Log out the user
+      clearAuthUser(); // Clear auth user from store
+      toast.success("Successfully logged out.");
+      router.push("/login");
+    } catch (error) {
+      toast.error("Error logging out. Please try again.");
+    }
+  };
 
   const normalizeUrl = (url) => {
     if (!/^https?:\/\//.test(url)) {
@@ -34,40 +62,17 @@ export default function TourismForm() {
   };
 
   const onSubmit = async (data = {}) => {
-    if (isSubmitting) return; // Prevent multiple submissions
-    setIsSubmitting(true); // Set submitting state
-
-    // Get the current user
-    const user = await getCurrentUser();
-
-    if (!user) {
-      setIsSubmitting(false); // Reset submitting state
-      throw new Error("No user logged in");
-    }
-
-    // Check for duplicate accommodation based on establishment name and business address
-    const isDuplicate = await checkDuplicateAccommodation(
-      data.establishmentName,
-      data.businessAddress
-    );
-
-    if (isDuplicate) {
-      toast.error("This accommodation has already been submitted", {
-        description:
-          "An entry with the same establishment name and address already exists.",
-        duration: 5000,
-      });
-      setIsDuplicate(true); // Set duplicate state
-      setIsSubmitting(false); // Reset submitting state
-      return; // Stop submission
-    } else {
-      setIsDuplicate(false); // Reset duplicate state
-    }
-
     const accommodationId = uuidv4(); // Generate a unique ID for this accommodation
     try {
+      // Retrieve the userId from session storage
+      const userId = sessionStorage.getItem("userId");
+      if (!userId) {
+        throw new Error("User is not logged in.");
+      }
+
       // Normalize website URL
       const normalizedWebsite = normalizeUrl(data.website);
+
       // Validate email format before submission
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
         throw new Error("Invalid email address format");
@@ -171,10 +176,10 @@ export default function TourismForm() {
         tableTennischecked: !!data.sportsRecreation?.tableTennis,
       };
 
-      // Save Basic Info
+      // Save Basic Info with default "Pending" status
+      // Save Basic Info with default "Pending" status
       await createDocument("6741d7f2000200706b21", {
         accommodationId,
-        userId: user.$id,
         municipality,
         establishmentName,
         businessAddress,
@@ -190,7 +195,8 @@ export default function TourismForm() {
         twitter,
         website: normalizedWebsite,
         bookingCompany,
-        status: "pending",
+        status: "Pending", // Set default status to "Pending"
+        userId, // Add the userId here
       });
 
       // Save Facilities
@@ -364,11 +370,27 @@ export default function TourismForm() {
         foreignmaleNum: parseInt(data.foreignmaleNum) || 0, // Number of foreign male employees
         foreignfemaleNum: parseInt(data.foreignfemaleNum) || 0, // Number of foreign female employees
       });
+      // After successful submission
+      sessionStorage.setItem("formSubmitted", "true");
       router.push("/client");
+      toast.success("Form submitted successfully!");
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast.error(
+        "An error occurred while submitting the form. Please try again."
+      );
     }
   };
+  if (!isAuthorized) {
+    return (
+      <Modal isOpen onClose={handleLogout}>
+        <div>
+          <h2 className="text-lg font-semibold">Access Denied</h2>
+          <p>You do not have permission to access this page.</p>
+        </div>
+      </Modal>
+    );
+  }
 
   // Map the tab order for navigation
   const tabOrder = [
@@ -398,24 +420,7 @@ export default function TourismForm() {
     }
   };
 
-  // Effect to check for duplicates when relevant fields change
-  useEffect(() => {
-    const checkForDuplicate = async () => {
-      const { establishmentName, businessAddress } = methods.getValues();
-      if (establishmentName && businessAddress) {
-        const duplicate = await checkDuplicateAccommodation(
-          establishmentName,
-          businessAddress
-        );
-        setIsDuplicate(duplicate);
-      }
-    };
-
-    const timeoutId = setTimeout(checkForDuplicate, 500); // Debounce the check
-    return () => clearTimeout(timeoutId); // Cleanup on unmount
-  }, [methods.watch("establishmentName"), methods.watch("businessAddress")]);
-
-  return (
+  return authUser ? (
     <FormProvider {...methods}>
       <div className="container mx-auto py-10">
         <Card>
@@ -474,5 +479,12 @@ export default function TourismForm() {
         </Card>
       </div>
     </FormProvider>
+  ) : (
+    <Modal isOpen={true} onClose={() => router.push("/login")}>
+      <div>
+        <h2 className="text-lg font-semibold">Login Required</h2>
+        <p className="mt-2">You must be logged in to access this page.</p>
+      </div>
+    </Modal>
   );
 }

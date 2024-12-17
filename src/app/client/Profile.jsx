@@ -3,6 +3,9 @@ import { User, Mail, Phone, MapPin } from "lucide-react";
 import { account, databases } from "@/services/appwrite";
 import { ID, Query } from "appwrite";
 import { toast } from "react-toastify";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -15,14 +18,11 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch user information
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        // Get current logged-in account
         const currentAccount = await account.get();
 
-        // Fetch user document from database
         const userDocuments = await databases.listDocuments(
           "672cfccb002f456cb332",
           "672cfcd0003c114264cd",
@@ -37,7 +37,6 @@ const Profile = () => {
             dateJoined: userDoc.$createdAt,
           });
 
-          // Initialize form data
           setFormData({
             name: userDoc.name || currentAccount.name,
             email: currentAccount.email,
@@ -58,14 +57,17 @@ const Profile = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // Update user document in the database
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "672cfcd0003c114264cd",
@@ -77,12 +79,10 @@ const Profile = () => {
         }
       );
 
-      // Optional: Update account name
       await account.updateName(formData.name);
 
       toast.success("Profile updated successfully!");
 
-      // Update local state
       setUser((prevUser) => ({
         ...prevUser,
         name: formData.name,
@@ -102,27 +102,32 @@ const Profile = () => {
     type = "text",
     value,
     onChange,
+    disabled = false,
   }) => (
-    <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+    <div className="space-y-2">
+      <Label htmlFor={name} className="text-sm font-medium text-gray-700">
         {label}
-      </label>
-      <div className="mt-1 relative rounded-md shadow-sm">
+      </Label>
+      <div className="relative rounded-md shadow-sm">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
         </div>
-        <input
+        <Input
           type={type}
           name={name}
           id={name}
           value={value}
           onChange={onChange}
-          className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
-          required
+          className="pl-10 w-full"
+          disabled={disabled}
         />
       </div>
     </div>
   );
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -163,14 +168,9 @@ const Profile = () => {
           value={formData.address}
           onChange={handleChange}
         />
-        <div>
-          <button
-            type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Update Profile
-          </button>
-        </div>
+        <Button type="submit" className="w-full">
+          Update Profile
+        </Button>
       </form>
       <div className="mt-6 border-t border-gray-200 pt-4">
         <h3 className="text-lg font-semibold mb-2">Account Information</h3>

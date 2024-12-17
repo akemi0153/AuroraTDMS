@@ -5,7 +5,7 @@ export const useAuthUserStore = create(
   persist(
     (set) => ({
       authUser: null,
-      setAuthUser: (payload) => set(() => ({ authUser: payload })),
+      setAuthUser: (user) => set(() => ({ authUser: user })),
       clearAuthUser: () => set({ authUser: null }),
     }),
     {

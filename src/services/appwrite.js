@@ -1,12 +1,17 @@
 import { Account, Client, Databases, ID, Query } from "appwrite";
 
 // Appwrite configuration
-const appwriteConfig = {
+export const appwriteConfig = {
   endpoint: "https://cloud.appwrite.io/v1",
   projectId: "672cfc4e003a4709c911",
   databaseId: "672cfccb002f456cb332",
   userCollectionId: "672cfcd0003c114264cd",
-  accommodationsCollectionId: "6741d7f2000200706b21", // Your Appwrite client collection ID
+  accommodationsCollectionId: "6741d7f2000200706b21",
+  cottagesCollectionId: "674342ba0017b324fb03",
+  employeesCollectionId: "67432e7e00241eb80e40",
+  facilitiesCollectionId: "6741e31a0022f8e43fb3",
+  roomsCollectionId: "67432e7e00241eb80e40",
+  servicesCollectionId: "6743c72d003a2d3b298d",
 };
 
 if (!appwriteConfig.endpoint || !appwriteConfig.projectId) {
@@ -38,6 +43,10 @@ export async function signIn(email, password) {
     // Fetch and return user account details
     const currentAccount = await account.get();
     if (!currentAccount) throw new Error("Failed to retrieve user account.");
+
+    // Store the userId in sessionStorage
+    sessionStorage.setItem("userId", currentAccount.$id);
+
     return currentAccount;
   } catch (error) {
     console.error("Error signing in:", error.message);
@@ -46,32 +55,49 @@ export async function signIn(email, password) {
 }
 
 // Get Current User Document
+
 export async function getCurrentUser() {
   try {
+    // Fetch the current account
     const currentAccount = await account.get();
-    if (!currentAccount || !currentAccount.$id) {
-      throw new Error("No active account found.");
+
+    // Validate the account response
+    if (!currentAccount?.$id) {
+      throw new Error("No active account found. Please log in.");
     }
 
-    // Fetch user document from the database
+    // Fetch the user document from the database
     const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.userCollectionId,
       [Query.equal("accountId", currentAccount.$id)]
     );
 
-    if (!response.documents || response.documents.length === 0) {
+    // Validate the user document
+    if (!response?.documents?.length) {
       throw new Error("User document not found.");
     }
 
-    const userDocument = response.documents[0];
-    if (!userDocument.role) {
-      userDocument.role = "user"; // Default role
+    // Get the user document
+    const userDocument = { ...response.documents[0] };
+
+    // Assign default role if missing
+    userDocument.role = userDocument.role || "user";
+
+    // Check for role-based permissions
+    if (
+      userDocument.role === "guests" &&
+      !currentAccount.scopes?.includes("account")
+    ) {
+      throw new Error(
+        "Insufficient permissions: User (role: guests) missing scope (account)."
+      );
     }
-    return userDocument;
+
+    return userDocument; // Return the validated user document
   } catch (error) {
     console.error("Error fetching current user:", error.message);
-    throw new Error("Failed to fetch user data.");
+    throw new Error(error.message || "Failed to retrieve user data.");
   }
 }
 
@@ -97,6 +123,10 @@ export async function signOut() {
   try {
     await account.deleteSession("current");
   } catch (error) {
+    if (error.message.includes("missing scope")) {
+      console.warn("Guest users do not have sessions to delete.");
+      return; // Guests may not have active sessions
+    }
     console.error("Error signing out:", error.message);
     throw new Error("Failed to sign out.");
   }
@@ -134,19 +164,6 @@ export const createDocument = async (collectionId, data) => {
     throw error;
   }
 };
-
-export async function fetchAccommodations() {
-  try {
-    const result = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      appwriteConfig.accommodationsCollectionId
-    );
-    return result.documents; // Return the list of accommodations
-  } catch (error) {
-    console.error("Failed to fetch accommodations:", error);
-    throw new Error("Failed to fetch accommodations");
-  }
-}
 
 export const fetchMunicipalityData = async () => {
   try {
@@ -211,3 +228,103 @@ export const checkDuplicateAccommodation = async (
     return false;
   }
 };
+export async function fetchAccommodations() {
+  try {
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.accommodationsCollectionId
+    );
+    return result.documents.map((doc) => ({
+      ...doc,
+      approvalStatus: doc.approvalStatus || "pending",
+    }));
+  } catch (error) {
+    console.error("Failed to fetch accommodations:", error);
+    throw new Error("Failed to fetch accommodations");
+  }
+}
+
+export async function fetchServices(accommodationId) {
+  try {
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.servicesCollectionId,
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
+    );
+    return result.documents;
+  } catch (error) {
+    console.error("Failed to fetch services:", error);
+    throw new Error("Failed to fetch services");
+  }
+}
+
+export async function fetchRooms(accommodationId) {
+  try {
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.roomsCollectionId,
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
+    );
+    return result.documents;
+  } catch (error) {
+    console.error("Failed to fetch rooms:", error);
+    throw new Error("Failed to fetch rooms");
+  }
+}
+
+export async function fetchEmployees(accommodationId) {
+  try {
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.employeesCollectionId,
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
+    );
+    return result.documents;
+  } catch (error) {
+    console.error("Failed to fetch employees:", error);
+    throw new Error("Failed to fetch employees");
+  }
+}
+
+export async function fetchCottages(accommodationId) {
+  try {
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.cottagesCollectionId,
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
+    );
+    return result.documents;
+  } catch (error) {
+    console.error("Failed to fetch cottages:", error);
+    throw new Error("Failed to fetch cottages");
+  }
+}
+
+export async function fetchFacilities(accommodationId) {
+  try {
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.facilitiesCollectionId,
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
+    );
+    return result.documents;
+  } catch (error) {
+    console.error("Failed to fetch facilities:", error);
+    throw new Error("Failed to fetch facilities");
+  }
+}
+
+export async function updateApprovalStatus(accommodationId, status) {
+  try {
+    const result = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.accommodationsCollectionId,
+      accommodationId,
+      { approvalStatus: status }
+    );
+    return result;
+  } catch (error) {
+    console.error("Failed to update approval status:", error);
+    throw new Error("Failed to update approval status");
+  }
+}
