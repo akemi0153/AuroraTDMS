@@ -16,6 +16,7 @@ import Services from "./Services";
 import Employees from "./Employees";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
+import { XCircle } from "lucide-react";
 
 export default function TourismForm() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -27,21 +28,62 @@ export default function TourismForm() {
   const router = useRouter();
 
   useEffect(() => {
-    // Validate user on component mount
-    if (authUser) {
-      if (authUser.role === "user") {
+    const checkAccess = async () => {
+      try {
+        const userRole = sessionStorage.getItem('userRole');
+        
+        if (!userRole) {
+          toast.error("Please log in first");
+          router.push("/login");
+          return;
+        }
+
+        // Strict validation for user role
+        if (userRole !== "user") {
+          setIsAuthorized(false);
+          
+          // Show unauthorized message and redirect after delay
+          setTimeout(() => {
+            switch (userRole) {
+              case "admin":
+                router.push("/admin");
+                break;
+              case "inspector":
+                const municipality = sessionStorage.getItem('userMunicipality');
+                switch (municipality) {
+                  case "Baler":
+                    router.push("/inspector/baler");
+                    break;
+                  case "San Luis":
+                    router.push("/inspector/sanluis");
+                    break;
+                  case "Maria Aurora":
+                    router.push("/inspector/maria");
+                    break;
+                  case "Dipaculao":
+                    router.push("/inspector/dipaculao");
+                    break;
+                  default:
+                    router.push("/login");
+                }
+                break;
+              default:
+                router.push("/login");
+            }
+          }, 3000);
+          return;
+        }
+
         setIsAuthorized(true);
-        setIsLoading(false);
-      } else {
-        toast.error("Access denied! User role required.");
-        setIsAuthorized(false);
+      } catch (error) {
+        console.error("Access check error:", error);
+        toast.error("Authentication error");
         router.push("/login");
       }
-    } else {
-      toast.error("You must be logged in to access this page.");
-      router.push("/login");
-    }
-  }, [authUser, router]);
+    };
+
+    checkAccess();
+  }, [router]);
 
   const handleLogout = async () => {
     try {
@@ -383,12 +425,23 @@ export default function TourismForm() {
   };
   if (!isAuthorized) {
     return (
-      <Modal isOpen onClose={handleLogout}>
-        <div>
-          <h2 className="text-lg font-semibold">Access Denied</h2>
-          <p>You do not have permission to access this page.</p>
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+          <div className="text-center">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-red-500 mb-2">
+              Unauthorized Access
+            </h1>
+            <p className="text-gray-600 mb-4">
+              You are not authorized to access the Tourism Form.
+              Redirecting you to the appropriate page...
+            </p>
+            <div className="animate-pulse">
+              <div className="h-2 bg-gray-200 rounded w-3/4 mx-auto"></div>
+            </div>
+          </div>
         </div>
-      </Modal>
+      </div>
     );
   }
 

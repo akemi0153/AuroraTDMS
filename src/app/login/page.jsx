@@ -11,6 +11,77 @@ import { createUser, getCurrentUser, signIn } from "@/services/appwrite";
 import { useAuthUserStore } from "@/services/user";
 import toast, { Toaster } from "react-hot-toast";
 
+function ResizableImage() {
+  const [size, setSize] = useState({ width: 50, height: 50 }); // Smaller initial size
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartPosition({
+      x: e.clientX - size.width,
+      y: e.clientY - size.height,
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+
+    const newWidth = Math.max(150, e.clientX - startPosition.x);
+    const newHeight = Math.max(150, e.clientY - startPosition.y);
+
+    // Keep aspect ratio
+    const aspectRatio = 16 / 9;
+    const width = newWidth;
+    const height = width / aspectRatio;
+
+    setSize({ width, height });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  return (
+    <div
+      className="relative w-full h-full flex flex-col items-center justify-center gap-4"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <div
+        className="relative"
+        style={{
+          width: `${size.width}%`,
+          height: `${size.height}%`,
+          minWidth: "150px",
+          minHeight: "150px",
+          maxWidth: "100%",
+          maxHeight: "100%",
+        }}
+      >
+        <img
+          src="./image/lap.png"
+          alt="Aurora Tourism"
+          className="w-full h-full object-contain p-4"
+        />
+        <div
+          className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-[#00acc1]/20 hover:bg-[#00acc1]/40 rounded-tl-xl transition-colors"
+          onMouseDown={handleMouseDown}
+        />
+      </div>
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-[#00838f]">
+          Welcome to Aurora Tourism
+        </h2>
+        <p className="text-[#00acc1]">
+          Your gateway to extraordinary experiences
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("login");
   const handleTabChange = (value) => {
@@ -31,6 +102,7 @@ export default function LoginPage() {
       if (currentUser && currentUser.role) {
         setAuthUser(currentUser);
         const role = currentUser.role;
+        const municipality = currentUser.municipality;
 
         switch (role) {
           case "admin":
@@ -39,19 +111,38 @@ export default function LoginPage() {
             break;
           case "inspector":
             toast.success(`Welcome back, ${currentUser.name}!`);
-            router.push("/inpector");
+            // Only allow access to their specific municipality dashboard
+            switch (municipality) {
+              case "Baler":
+                router.push("/inspector/baler");
+                break;
+              case "San Luis":
+                router.push("/inspector/sanluis");
+                break;
+              case "Maria Aurora":
+                router.push("/inspector/maria");
+                break;
+              case "Dipaculao":
+                router.push("/inspector/dipaculao");
+                break;
+              default:
+                toast.error("Municipality not assigned");
+                router.push("/login");
+            }
             break;
           case "user":
-          default:
             toast.success(`Welcome back, ${currentUser.name}!`);
             router.push("/client");
+            break;
+          default:
+            toast.error("Invalid role assigned");
+            router.push("/login");
             break;
         }
       } else {
         toast.error("Unable to fetch user role.");
       }
     } catch (error) {
-      console.error("Role redirection error:", error.message);
       toast.error("Failed to determine user role. Please try again.");
     }
   };
@@ -62,9 +153,19 @@ export default function LoginPage() {
     try {
       const user = await signIn(email, password);
       setAuthUser(user);
+
+      // Set cookies for middleware
+      document.cookie = `sessionId=${user.$id}; path=/`;
+      document.cookie = `userRole=${user.role}; path=/`;
+      document.cookie = `userMunicipality=${user.municipality || ""}; path=/`;
+
+      sessionStorage.setItem("userRole", user.role);
+      if (user.municipality) {
+        sessionStorage.setItem("userMunicipality", user.municipality);
+      }
+
       await handleRoleRedirect();
     } catch (error) {
-      console.error("Login error:", error.message);
       toast.error(error.message || "Login failed, please try again.");
     } finally {
       setIsLoading(false);
@@ -94,7 +195,7 @@ export default function LoginPage() {
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 bg-gradient-to-br from-[#e0f7fa] via-[#b2ebf2] to-[#80deea] p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="#" className="flex items-center gap-2 font-medium">
+          <a href="/homepage" className="flex items-center gap-2 font-medium">
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00acc1] text-white">
               <GalleryVerticalEnd className="size-4" />
             </div>
@@ -299,15 +400,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <div className="relative hidden lg:block">
-        <div className="absolute inset-0 h-full w-full">
-          <img
-            src="./image/lap.png"
-            alt="Aurora Tourism"
-            className="h-full w-full object-cover p-8"
-          />
-        </div>
-      </div>
+      <div className="relative hidden lg:block"></div>
     </div>
   );
 }

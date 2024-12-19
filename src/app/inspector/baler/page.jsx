@@ -37,7 +37,11 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { fetchSpecificAccommodations } from "@/services/appwrite";
+import {
+  fetchSpecificAccommodations,
+  getCurrentUser,
+  signOut,
+} from "@/services/appwrite";
 import { databases } from "@/services/appwrite";
 import {
   Dialog,
@@ -68,6 +72,70 @@ export default function BalerPage() {
   const [viewEstablishment, setViewEstablishment] = useState(null);
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+          toast.error("Please log in first");
+          router.push("/login");
+          return;
+        }
+
+        // Strict validation for Baler inspector
+        if (
+          currentUser.role !== "inspector" ||
+          currentUser.municipality !== "Baler"
+        ) {
+          setIsAuthorized(false);
+          setAuthChecked(true);
+
+          // Show unauthorized message and redirect after delay
+          setTimeout(() => {
+            if (currentUser.role === "inspector") {
+              switch (currentUser.municipality) {
+                case "San Luis":
+                  router.push("/inspector/sanluis");
+                  break;
+                case "Maria Aurora":
+                  router.push("/inspector/maria");
+                  break;
+                case "Dipaculao":
+                  router.push("/inspector/dipaculao");
+                  break;
+                default:
+                  router.push("/login");
+              }
+            } else {
+              switch (currentUser.role) {
+                case "admin":
+                  router.push("/admin");
+                  break;
+                case "user":
+                  router.push("/client");
+                  break;
+                default:
+                  router.push("/login");
+              }
+            }
+          }, 3000); // Redirect after 3 seconds
+          return;
+        }
+
+        setIsAuthorized(true);
+        setAuthChecked(true);
+      } catch (error) {
+        console.error("Access check error:", error);
+        toast.error("Authentication error");
+        router.push("/login");
+      }
+    };
+
+    checkAccess();
+  }, [router]);
 
   useEffect(() => {
     const loadAccommodations = async () => {
@@ -92,13 +160,15 @@ export default function BalerPage() {
     acc.establishmentName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    document.cookie =
-      "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    toast.success("Logged out successfully");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to logout properly");
+      window.location.href = '/login';
+    }
   };
 
   const handleSetAppointment = (establishment) => {
@@ -230,6 +300,39 @@ export default function BalerPage() {
         return null;
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authorization...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+          <div className="text-center">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-red-500 mb-2">
+              Unauthorized Access
+            </h1>
+            <p className="text-gray-600 mb-4">
+              You are not authorized to access the Baler dashboard. Redirecting
+              you to the appropriate page...
+            </p>
+            <div className="animate-pulse">
+              <div className="h-2 bg-gray-200 rounded w-3/4 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">

@@ -37,7 +37,11 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { fetchSpecificAccommodations } from "@/services/appwrite";
+import {
+  fetchSpecificAccommodations,
+  getCurrentUser,
+  signOut,
+} from "@/services/appwrite";
 import { databases } from "@/services/appwrite";
 import {
   Dialog,
@@ -68,6 +72,70 @@ export default function DipaculaoPage() {
   const [viewEstablishment, setViewEstablishment] = useState(null);
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthorized, setIsAuthorized] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+          toast.error("Please log in first");
+          router.push("/login");
+          return;
+        }
+
+        // Check if user is an inspector and assigned to Baler
+        if (
+          currentUser.role !== "inspector" ||
+          currentUser.municipality !== "Dipaculao"
+        ) {
+          setIsAuthorized(false);
+          setAuthChecked(true);
+          
+          // Show unauthorized message and redirect after delay
+          setTimeout(() => {
+            if (currentUser.role === "inspector") {
+              switch (currentUser.municipality) {
+                case "Baler":
+                  router.push("/inspector/baler");
+                  break;
+                case "Maria Aurora":
+                  router.push("/inspector/maria");
+                  break;
+                case "San Luis":
+                  router.push("/inspector/sanluis");
+                  break;
+                default:
+                  router.push("/login");
+              }
+            } else {
+              switch (currentUser.role) {
+                case "admin":
+                  router.push("/admin");
+                  break;
+                case "user":
+                  router.push("/client");
+                  break;
+                default:
+                  router.push("/login");
+              }
+            }
+          }, 3000);
+          return;
+        }
+
+        setIsAuthorized(true);
+        setAuthChecked(true);
+      } catch (error) {
+        console.error("Access check error:", error);
+        toast.error("Authentication error");
+        router.push("/login");
+      }
+    };
+
+    checkAccess();
+  }, [router]);
 
   useEffect(() => {
     const loadAccommodations = async () => {
@@ -92,13 +160,15 @@ export default function DipaculaoPage() {
     acc.establishmentName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    document.cookie =
-      "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    toast.success("Logged out successfully");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to logout properly");
+      window.location.href = '/login';
+    }
   };
 
   const handleSetAppointment = (establishment) => {
@@ -230,6 +300,28 @@ export default function DipaculaoPage() {
         return null;
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authorization...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authorization...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">

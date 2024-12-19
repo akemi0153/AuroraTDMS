@@ -30,26 +30,35 @@ export const databases = new Databases(client);
 // Sign In
 export async function signIn(email, password) {
   try {
-    // Destroy any existing session
+    // 1. First, ensure we're starting with a clean slate
     try {
-      await account.deleteSession("current");
-    } catch {
-      // Ignore if no session exists
+      // Try to delete any existing sessions
+      const sessions = await account.listSessions();
+      await Promise.all(
+        sessions.sessions.map(session => account.deleteSession(session.$id))
+      );
+    } catch (e) {
+      console.log("No existing sessions to clear");
     }
 
-    // Create a new session
+    // 2. Clear any existing storage/cookies
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // 3. Create new session
     const session = await account.createEmailPasswordSession(email, password);
 
-    // Fetch and return user account details
+    // 4. Fetch user account details
     const currentAccount = await account.get();
     if (!currentAccount) throw new Error("Failed to retrieve user account.");
 
-    // Store the userId in sessionStorage
+    // 5. Store essential information
     sessionStorage.setItem("userId", currentAccount.$id);
+    sessionStorage.setItem("userEmail", currentAccount.email);
 
     return currentAccount;
   } catch (error) {
-    console.error("Error signing in:", error.message);
+    console.error("Sign in error:", error);
     throw new Error(error.message || "Error during login. Please try again.");
   }
 }
@@ -102,14 +111,26 @@ export async function getCurrentUser() {
 }
 
 // Create New User
-export async function createUser(email, password, name, role = "user") {
+export async function createUser(
+  email,
+  password,
+  name,
+  role = "user",
+  additionalData = {}
+) {
   try {
     const newAccount = await account.create(ID.unique(), email, password, name);
     const userDocument = await databases.createDocument(
       appwriteConfig.databaseId,
       appwriteConfig.userCollectionId,
       ID.unique(),
-      { accountId: newAccount.$id, email, name, role }
+      {
+        accountId: newAccount.$id,
+        email,
+        name,
+        role,
+        ...additionalData, // This will include the municipality
+      }
     );
     return userDocument;
   } catch (error) {
@@ -119,18 +140,66 @@ export async function createUser(email, password, name, role = "user") {
 }
 
 // Sign Out
-export async function signOut() {
+export const signOut = async () => {
   try {
-    await account.deleteSession("current");
-  } catch (error) {
-    if (error.message.includes("missing scope")) {
-      console.warn("Guest users do not have sessions to delete.");
-      return; // Guests may not have active sessions
+    // 1. Delete all Appwrite sessions
+    const sessions = await account.listSessions();
+    const deletionPromises = sessions.sessions.map(session => 
+      account.deleteSession(session.$id)
+    );
+    await Promise.all(deletionPromises);
+    
+    // 2. Clear all cookies systematically
+    const cookies = [
+      'sessionId',
+      'userRole',
+      'userMunicipality',
+      'authToken',
+      'a_session', // Appwrite session cookie
+      'fallback_session'
+    ];
+    
+    // Clear cookies for all possible domains and paths
+    cookies.forEach(cookie => {
+      // Root path
+      document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      // Domain and subdomain
+      document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+      document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+    });
+    
+    // 3. Clear storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // 4. Reset any global state
+    if (typeof window !== 'undefined') {
+      // Force a complete page reload to clear any remaining state
+      window.location.href = '/login';
     }
-    console.error("Error signing out:", error.message);
-    throw new Error("Failed to sign out.");
+    
+    return true;
+  } catch (error) {
+    console.error('Sign out error:', error);
+    // Even if there's an error, try to clear everything
+    try {
+      // Attempt cleanup even if main logout fails
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      cookies.forEach(cookie => {
+        document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+      });
+      
+      // Force reload even on error
+      window.location.href = '/login';
+    } catch (e) {
+      console.error('Error during cleanup:', e);
+    }
+    throw error;
   }
-}
+};
 
 export async function submitTourismForm(formData) {
   try {
