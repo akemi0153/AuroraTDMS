@@ -15,7 +15,7 @@ import Cottages from "./Cottages";
 import Services from "./Services";
 import Employees from "./Employees";
 import { v4 as uuidv4 } from "uuid";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 export default function TourismForm() {
   const [isAuthorized, setIsAuthorized] = useState(false);

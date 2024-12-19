@@ -81,7 +81,7 @@ export default function AdminDashboard() {
       <div className="flex h-screen bg-gray-100">
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          className={`fixed inset-y-0 z-50 flex w-64 flex-col bg-white/80 backdrop-blur-sm shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -125,9 +125,9 @@ export default function AdminDashboard() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto bg-gradient-to-br from-sky-50 to-white">
           {/* Header */}
-          <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white px-6 shadow-sm">
+          <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white/80 backdrop-blur-sm px-6 shadow-sm">
             <Button
               variant="ghost"
               size="icon"

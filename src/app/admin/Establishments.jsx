@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -117,16 +117,16 @@ export default function Establishments() {
         ) : establishments && establishments.length > 0 ? (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">Establishment Name</TableHead>
-                <TableHead>Municipality</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="bg-sky-50">
+                <TableHead className="w-[300px] font-semibold">Establishment Name</TableHead>
+                <TableHead className="font-semibold">Municipality</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="text-right font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {currentItems.map((establishment) => (
-                <TableRow key={establishment.$id}>
+                <TableRow key={establishment.$id} className="hover:bg-sky-50">
                   <TableCell className="font-medium">
                     {establishment.establishmentName}
                   </TableCell>
@@ -168,7 +168,7 @@ export default function Establishments() {
           </div>
         )}
         {establishments && establishments.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex items-center justify-between px-4 py-4 bg-sky-50 rounded-b-lg">
             <p className="text-sm text-gray-700">
               Showing {indexOfFirstItem + 1} to{" "}
               {Math.min(indexOfLastItem, filteredEstablishments.length)} of{" "}
@@ -295,3 +295,4 @@ export default function Establishments() {
     </div>
   );
 }
+

@@ -66,11 +66,11 @@ export default function BasicInfo() {
               <Input
                 id="contactNumber"
                 placeholder="Enter contact number"
-                type="tel"
+                type="number"
                 {...register("contactNumber", {
                   required: "Contact number is required",
                   pattern: {
-                    value: /^[0-9+]*$/,
+                    value: /^[0-9]+$/,
                     message: "Invalid contact number format",
                   },
                 })}
@@ -81,8 +81,13 @@ export default function BasicInfo() {
               <Input
                 id="accreditationNumber"
                 placeholder="Enter accreditation number"
+                type="number"
                 {...register("accreditationNumber", {
                   required: "Accreditation number is required",
+                  pattern: {
+                    value: /^[0-9]+$/,
+                    message: "Only numerical values are allowed",
+                  },
                 })}
               />
             </div>
@@ -101,8 +106,13 @@ export default function BasicInfo() {
               <Input
                 id="licenseNumber"
                 placeholder="Enter LGU license number"
+                type="number"
                 {...register("licenseNumber", {
                   required: "LGU license number is required",
+                  pattern: {
+                    value: /^[0-9]+$/,
+                    message: "Only numerical values are allowed",
+                  },
                 })}
               />
             </div>

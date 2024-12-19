@@ -3,13 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   BarChart,
   Bar,
   AreaChart,
@@ -20,6 +13,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 import { Home, Users, Activity } from "lucide-react";
 import { fetchAccommodations } from "@/services/appwrite";
@@ -37,13 +32,35 @@ export default function Overview() {
   const [establishments, setEstablishments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filterType, setFilterType] = useState("all");
+  const [formSubmissions, setFormSubmissions] = useState([]); // Added state for form submissions
 
+  // Fetch data on load
   useEffect(() => {
     async function loadData() {
       try {
         const data = await fetchAccommodations();
-        setEstablishments(data);
+        setEstablishments(data || []); // Ensure data is always an array
+
+        // Process form submission data
+        const submissionData = data.reduce((acc, item) => {
+          const date = new Date(item.createdAt);
+          const monthYear = `${date.getFullYear()}-${String(
+            date.getMonth() + 1
+          ).padStart(2, "0")}`;
+
+          if (!acc[monthYear]) {
+            acc[monthYear] = { month: monthYear, count: 0 };
+          }
+          acc[monthYear].count += 1;
+
+          return acc;
+        }, {});
+
+        const sortedSubmissions = Object.values(submissionData).sort((a, b) =>
+          a.month.localeCompare(b.month)
+        );
+        setFormSubmissions(sortedSubmissions);
+
         setError(null);
       } catch (error) {
         console.error("Failed to fetch accommodations:", error);
@@ -55,6 +72,7 @@ export default function Overview() {
     loadData();
   }, []);
 
+  // Handle loading and error states
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -63,11 +81,17 @@ export default function Overview() {
     return <div>Error: {error}</div>;
   }
 
-  const filteredEstablishments =
-    filterType === "all"
-      ? establishments
-      : establishments.filter((e) => e.accommodationType === filterType);
+  // Ensure unique accommodation types
+  const accommodationTypes = Array.from(
+    new Set(
+      establishments.map((e) => e.accommodationType).filter((type) => type) // Remove undefined/null values
+    )
+  );
 
+  // Filter establishments based on selected type
+  const filteredEstablishments = establishments;
+
+  // Derived statistics
   const totalEstablishments = filteredEstablishments.length;
   const totalMunicipalities = new Set(
     filteredEstablishments.map((e) => e.municipality)
@@ -76,25 +100,9 @@ export default function Overview() {
     (e) => e.approvalStatus === "pending"
   ).length;
 
-  const accommodationTypes = Array.from(
-    new Set(establishments.map((e) => e.accommodationType))
-  );
+  // Data for cumulative growth chart (removed)
 
-  // Generate cumulative growth data for accommodation types
-  const growthData = Array(12)
-    .fill()
-    .map((_, month) => {
-      const dataPoint = { month: month + 1 };
-      let total = 0;
-      accommodationTypes.forEach((type, index) => {
-        // Simulate growth with random increments
-        const increment = Math.floor(Math.random() * 10) + 1;
-        total += increment;
-        dataPoint[type] = total;
-      });
-      return dataPoint;
-    });
-
+  // Data for establishments per municipality
   const municipalityData = Object.entries(
     filteredEstablishments.reduce((acc, e) => {
       acc[e.municipality] = (acc[e.municipality] || 0) + 1;
@@ -104,45 +112,37 @@ export default function Overview() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <h2 className="text-3xl font-bold">Dashboard Overview</h2>
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {accommodationTypes.map((type) => (
-              <SelectItem key={type} value={type}>
-                {type}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
         <StatCard
           key="establishments"
           title="Total Establishments"
           value={totalEstablishments}
           description="Filtered establishments"
-          icon={<Home className="h-4 w-4 text-muted-foreground" />}
+          icon={<Home className="h-4 w-4 text-sky-600" />}
+          color="bg-sky-600"
         />
         <StatCard
           key="municipalities"
           title="Municipalities"
           value={totalMunicipalities}
           description="With registered establishments"
-          icon={<Users className="h-4 w-4 text-muted-foreground" />}
+          icon={<Users className="h-4 w-4 text-emerald-600" />}
+          color="bg-emerald-600"
         />
         <StatCard
           key="pending"
           title="Pending Approvals"
           value={pendingApprovals}
           description="Awaiting review"
-          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+          icon={<Activity className="h-4 w-4 text-amber-600" />}
+          color="bg-amber-600"
         />
       </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -156,34 +156,45 @@ export default function Overview() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#8884d8" />
+                <Bar dataKey="count" fill="hsl(201, 96%, 32%)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
+
+        {/* Replaced Total Accommodation Growth Over Time chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Accommodation Growth Over Time</CardTitle>
+            <CardTitle>Form Submissions Over Time</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={growthData}>
+              <LineChart data={formSubmissions}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis
+                  dataKey="month"
+                  tickFormatter={(value) => {
+                    const [year, month] = value.split("-");
+                    return `${month}/${year.slice(2)}`;
+                  }}
+                />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(value) => {
+                    const [year, month] = value.split("-");
+                    return `${month}/${year}`;
+                  }}
+                />
                 <Legend />
-                {accommodationTypes.map((type, index) => (
-                  <Area
-                    key={type}
-                    type="monotone"
-                    dataKey={type}
-                    stackId="1"
-                    stroke={COLORS[index % COLORS.length]}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </AreaChart>
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  name="Submissions"
+                  stroke="hsl(201, 96%, 32%)"
+                  strokeWidth={2}
+                  dot={true}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -192,14 +203,19 @@ export default function Overview() {
   );
 }
 
-function StatCard({ title, value, description, icon }) {
+// StatCard Component
+function StatCard({ title, value, description, icon, color }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
+    <Card className="overflow-hidden">
+      <CardHeader
+        className={`flex flex-row items-center justify-between space-y-0 pb-2 ${color}`}
+      >
+        <CardTitle className="text-sm font-medium text-white">
+          {title}
+        </CardTitle>
+        <div className="bg-white rounded-full p-2">{icon}</div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <div className="text-2xl font-bold">{value}</div>
         <p className="text-xs text-muted-foreground">{description}</p>
       </CardContent>

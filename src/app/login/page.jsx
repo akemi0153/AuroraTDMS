@@ -1,26 +1,18 @@
 "use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LockIcon, MailIcon, UserIcon } from "lucide-react";
+import { GalleryVerticalEnd, LockIcon, MailIcon, UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createUser, getCurrentUser, signIn } from "@/services/appwrite";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useAuthUserStore } from "@/services/user";
+import toast, { Toaster } from "react-hot-toast";
 
-export default function AuthPage() {
-  const [_, setActiveTab] = useState("login");
+export default function LoginPage() {
+  const [activeTab, setActiveTab] = useState("login");
   const handleTabChange = (value) => {
     setActiveTab(value);
   };
@@ -37,7 +29,7 @@ export default function AuthPage() {
     try {
       const currentUser = await getCurrentUser();
       if (currentUser && currentUser.role) {
-        setAuthUser(currentUser); // Save current user with role
+        setAuthUser(currentUser);
         const role = currentUser.role;
 
         switch (role) {
@@ -45,9 +37,9 @@ export default function AuthPage() {
             toast.success(`Welcome back, ${currentUser.name}!`);
             router.push("/admin");
             break;
-          case "superadmin":
+          case "inspector":
             toast.success(`Welcome back, ${currentUser.name}!`);
-            router.push("/superadmin");
+            router.push("/inpector");
             break;
           case "user":
           default:
@@ -68,9 +60,9 @@ export default function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const user = await signIn(email, password); // Log in using Appwrite
-      setAuthUser(user); // Save user to store
-      await handleRoleRedirect(); // Redirect user based on their role
+      const user = await signIn(email, password);
+      setAuthUser(user);
+      await handleRoleRedirect();
     } catch (error) {
       console.error("Login error:", error.message);
       toast.error(error.message || "Login failed, please try again.");
@@ -89,7 +81,7 @@ export default function AuthPage() {
     try {
       await createUser(email, password, fullName);
       toast.success("Account created successfully! Please log in.");
-      setActiveTab("login"); // Switch to login tab
+      setActiveTab("login");
     } catch (error) {
       console.error("Signup error:", error.message);
       toast.error(error.message || "Signup failed, please try again.");
@@ -99,38 +91,58 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#669bbc] to-indigo-600 flex items-center justify-center p-4">
-      <ToastContainer />
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
+    <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="flex flex-col gap-4 bg-gradient-to-br from-[#e0f7fa] via-[#b2ebf2] to-[#80deea] p-6 md:p-10">
+        <div className="flex justify-center gap-2 md:justify-start">
+          <a href="#" className="flex items-center gap-2 font-medium">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00acc1] text-white">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
             Aurora Tourism
-          </CardTitle>
-          <CardDescription className="text-center">
-            Digital Management System
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login" onValueChange={handleTabChange}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <form onSubmit={handleLogin}>
-                <div className="space-y-4">
+          </a>
+        </div>
+        <Toaster />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-md space-y-6 rounded-xl bg-white/80 p-6 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <h1 className="text-2xl font-bold text-[#00838f]">
+                Digital Management System
+              </h1>
+            </div>
+            <Tabs defaultValue="login" onValueChange={handleTabChange}>
+              <TabsList className="grid w-full grid-cols-2 rounded-full bg-[#e0f7fa] p-1">
+                <TabsTrigger
+                  value="login"
+                  className="rounded-full text-[#00acc1] data-[state=active]:bg-[#00acc1] data-[state=active]:text-white"
+                >
+                  Sign In
+                </TabsTrigger>
+                <TabsTrigger
+                  value="signup"
+                  className="rounded-full text-[#00acc1] data-[state=active]:bg-[#00acc1] data-[state=active]:text-white"
+                >
+                  Sign Up
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label
+                      htmlFor="email"
+                      className="text-[#00838f] font-semibold"
+                    >
+                      Email
+                    </Label>
                     <div className="relative">
                       <MailIcon
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
                         size={20}
                       />
                       <Input
                         id="email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -138,43 +150,63 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="password"
+                        className="text-[#00838f] font-semibold"
+                      >
+                        Password
+                      </Label>
+                      <a
+                        href="#"
+                        className="text-sm text-[#00acc1] hover:underline"
+                      >
+                        Forgot password?
+                      </a>
+                    </div>
                     <div className="relative">
                       <LockIcon
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
                         size={20}
                       />
                       <Input
                         id="password"
                         type="password"
                         placeholder="Enter your password"
-                        className="pl-10"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                       />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1]"
+                    disabled={isLoading}
+                  >
                     {isLoading ? "Loading..." : "Sign In"}
                   </Button>
-                </div>
-              </form>
-            </TabsContent>
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp}>
-                <div className="space-y-4">
+                </form>
+              </TabsContent>
+              <TabsContent value="signup">
+                <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label
+                      htmlFor="name"
+                      className="text-[#00838f] font-semibold"
+                    >
+                      Full Name
+                    </Label>
                     <div className="relative">
                       <UserIcon
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
                         size={20}
                       />
                       <Input
                         id="name"
                         placeholder="Enter your full name"
-                        className="pl-10"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         required
@@ -182,17 +214,22 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label
+                      htmlFor="signup-email"
+                      className="text-[#00838f] font-semibold"
+                    >
+                      Email
+                    </Label>
                     <div className="relative">
                       <MailIcon
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
                         size={20}
                       />
                       <Input
                         id="signup-email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -200,17 +237,22 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                    <Label
+                      htmlFor="signup-password"
+                      className="text-[#00838f] font-semibold"
+                    >
+                      Create Password
+                    </Label>
                     <div className="relative">
                       <LockIcon
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
                         size={20}
                       />
                       <Input
                         id="signup-password"
                         type="password"
-                        placeholder="Create a password"
-                        className="pl-10"
+                        placeholder="Create your password"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -218,38 +260,54 @@ export default function AuthPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Label
+                      htmlFor="confirm-password"
+                      className="text-[#00838f] font-semibold"
+                    >
+                      Confirm Password
+                    </Label>
                     <div className="relative">
                       <LockIcon
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
                         size={20}
                       />
                       <Input
                         id="confirm-password"
                         type="password"
                         placeholder="Confirm your password"
-                        className="pl-10"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                       />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1]"
+                    disabled={isLoading}
+                  >
                     {isLoading ? "Loading..." : "Sign Up"}
                   </Button>
-                </div>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter>
-          <p className="text-sm text-center w-full text-gray-600">
-            By continuing, you agree to Aurora Tourism Terms of Service and
-            Privacy Policy.
-          </p>
-        </CardFooter>
-      </Card>
+                </form>
+              </TabsContent>
+            </Tabs>
+            <div className="text-center text-sm text-[#00838f]">
+              By continuing, you agree to Aurora Tourism Terms of Service and
+              Privacy Policy.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="relative hidden lg:block">
+        <div className="absolute inset-0 h-full w-full">
+          <img
+            src="./image/lap.png"
+            alt="Aurora Tourism"
+            className="h-full w-full object-cover p-8"
+          />
+        </div>
+      </div>
     </div>
   );
 }

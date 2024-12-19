@@ -90,8 +90,8 @@ export default function UsersPage() {
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-6 text-3xl font-bold">Users</h1>
-      <Card>
-        <CardHeader>
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-sky-100">
           <CardTitle>User List</CardTitle>
         </CardHeader>
         <CardContent>
@@ -100,15 +100,15 @@ export default function UsersPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                <TableRow className="bg-sky-50">
+                  <TableHead className="font-semibold">Name</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Role</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.$id}>
+                  <TableRow key={user.$id} className="hover:bg-sky-50">
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.role || "N/A"}</TableCell>

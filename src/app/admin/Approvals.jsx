@@ -56,8 +56,8 @@ export default function Approvals() {
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-6 text-3xl font-bold">Approvals</h1>
-      <Card>
-        <CardHeader>
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-sky-100">
           <CardTitle>Pending Approvals</CardTitle>
         </CardHeader>
         <CardContent>
@@ -70,15 +70,17 @@ export default function Approvals() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Establishment Name</TableHead>
-                  <TableHead>Municipality</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="bg-sky-50">
+                  <TableHead className="font-semibold">
+                    Establishment Name
+                  </TableHead>
+                  <TableHead className="font-semibold">Municipality</TableHead>
+                  <TableHead className="font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pendingApprovals.map((establishment) => (
-                  <TableRow key={establishment.$id}>
+                  <TableRow key={establishment.$id} className="hover:bg-sky-50">
                     <TableCell>{establishment.establishmentName}</TableCell>
                     <TableCell>{establishment.municipality}</TableCell>
                     <TableCell>

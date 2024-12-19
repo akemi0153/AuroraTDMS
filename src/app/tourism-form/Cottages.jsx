@@ -65,6 +65,7 @@ export default function Cottages() {
                   <TableCell>
                     <Input
                       type="number"
+                      min="0"
                       {...register(`acCottages.${index}.rate`)}
                     />
                   </TableCell>
@@ -125,6 +126,7 @@ export default function Cottages() {
                   <TableCell>
                     <Input
                       type="number"
+                      min="0"
                       {...register(`nonAcCottages.${index}.rate`)}
                     />
                   </TableCell>
@@ -179,6 +181,7 @@ export default function Cottages() {
                   <TableCell>
                     <Input
                       type="number"
+                      min="0"
                       {...register(`tents.${index}.capacity`)}
                     />
                   </TableCell>
