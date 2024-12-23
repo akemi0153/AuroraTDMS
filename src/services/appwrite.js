@@ -12,6 +12,7 @@ export const appwriteConfig = {
   facilitiesCollectionId: "6741e31a0022f8e43fb3",
   roomsCollectionId: "67432e7e00241eb80e40",
   servicesCollectionId: "6743c72d003a2d3b298d",
+  logsCollectionId: "6766ffac001f897801e9", // Added logs collection ID
 };
 
 if (!appwriteConfig.endpoint || !appwriteConfig.projectId) {
@@ -35,16 +36,14 @@ export async function signIn(email, password) {
       // Try to delete any existing sessions
       const sessions = await account.listSessions();
       await Promise.all(
-        sessions.sessions.map(session => account.deleteSession(session.$id))
+        sessions.sessions.map((session) => account.deleteSession(session.$id))
       );
-    } catch (e) {
-      console.log("No existing sessions to clear");
-    }
+    } catch (e) {}
 
     // 2. Clear any existing storage/cookies
     localStorage.clear();
     sessionStorage.clear();
-    
+
     // 3. Create new session
     const session = await account.createEmailPasswordSession(email, password);
 
@@ -104,7 +103,6 @@ export async function getCurrentUser() {
 
     return userDocument; // Return the validated user document
   } catch (error) {
-    console.error("Error fetching current user:", error.message);
     throw new Error(error.message || "Failed to retrieve user data.");
   }
 }
@@ -133,7 +131,6 @@ export async function createUser(
     );
     return userDocument;
   } catch (error) {
-    console.error("Error creating user:", error.message);
     throw new Error("Failed to create user.");
   }
 }
@@ -143,59 +140,56 @@ export const signOut = async () => {
   try {
     // 1. Delete all Appwrite sessions
     const sessions = await account.listSessions();
-    const deletionPromises = sessions.sessions.map(session => 
+    const deletionPromises = sessions.sessions.map((session) =>
       account.deleteSession(session.$id)
     );
     await Promise.all(deletionPromises);
-    
+
     // 2. Clear all cookies systematically
     const cookies = [
-      'sessionId',
-      'userRole',
-      'userMunicipality',
-      'authToken',
-      'a_session', // Appwrite session cookie
-      'fallback_session'
+      "sessionId",
+      "userRole",
+      "userMunicipality",
+      "authToken",
+      "a_session", // Appwrite session cookie
+      "fallback_session",
     ];
-    
+
     // Clear cookies for all possible domains and paths
-    cookies.forEach(cookie => {
+    cookies.forEach((cookie) => {
       // Root path
-      document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      document.cookie = `${cookie}=; expires=Thu, 01 Jan 2025 00:00:00 UTC; path=/;`;
       // Domain and subdomain
-      document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
-      document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+      document.cookie = `${cookie}=; expires=Thu, 01 Jan 2025 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+      document.cookie = `${cookie}=; expires=Thu, 01 Jan 2025 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
     });
-    
+
     // 3. Clear storage
     localStorage.clear();
     sessionStorage.clear();
-    
+
     // 4. Reset any global state
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       // Force a complete page reload to clear any remaining state
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
-    
+
     return true;
   } catch (error) {
-    console.error('Sign out error:', error);
     // Even if there's an error, try to clear everything
     try {
       // Attempt cleanup even if main logout fails
       localStorage.clear();
       sessionStorage.clear();
-      
-      cookies.forEach(cookie => {
-        document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+
+      cookies.forEach((cookie) => {
+        document.cookie = `${cookie}=; expires=Thu, 01 Jan 2025 00:00:00 UTC; path=/;`;
+        document.cookie = `${cookie}=; expires=Thu, 01 Jan 2025 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
       });
-      
+
       // Force reload even on error
-      window.location.href = '/login';
-    } catch (e) {
-      console.error('Error during cleanup:', e);
-    }
+      window.location.href = "/login";
+    } catch (e) {}
     throw error;
   }
 };
@@ -210,7 +204,6 @@ export async function submitTourismForm(formData) {
     );
     return result;
   } catch (error) {
-    console.error("Failed to submit form data:", error);
     throw new Error("Failed to submit form data");
   }
 }
@@ -241,7 +234,6 @@ export const fetchMunicipalityData = async () => {
     );
     return response.documents;
   } catch (error) {
-    console.error("Error fetching municipality data:", error);
     return [];
   }
 };
@@ -256,7 +248,6 @@ export async function fetchSpecificAccommodations(municipality) {
     );
     return response.documents;
   } catch (error) {
-    console.error("Error fetching accommodations:", error);
     throw new Error("Failed to fetch specific accommodations");
   }
 }
@@ -269,7 +260,6 @@ export const getDocumentByQuery = async (collectionId, query) => {
     }
     throw new Error("No documents found");
   } catch (error) {
-    console.error("Error fetching document:", error);
     throw error;
   }
 };
@@ -292,7 +282,6 @@ export const checkDuplicateAccommodation = async (
     // If any documents match, it's a duplicate
     return response.documents.length > 0;
   } catch (error) {
-    console.error("Error checking for duplicate accommodation:", error);
     return false;
   }
 };
@@ -307,7 +296,6 @@ export async function fetchAccommodations() {
       approvalStatus: doc.approvalStatus || "pending",
     }));
   } catch (error) {
-    console.error("Failed to fetch accommodations:", error);
     throw new Error("Failed to fetch accommodations");
   }
 }
@@ -321,7 +309,6 @@ export async function fetchServices(accommodationId) {
     );
     return result.documents;
   } catch (error) {
-    console.error("Failed to fetch services:", error);
     throw new Error("Failed to fetch services");
   }
 }
@@ -335,7 +322,6 @@ export async function fetchRooms(accommodationId) {
     );
     return result.documents;
   } catch (error) {
-    console.error("Failed to fetch rooms:", error);
     throw new Error("Failed to fetch rooms");
   }
 }
@@ -349,7 +335,6 @@ export async function fetchEmployees(accommodationId) {
     );
     return result.documents;
   } catch (error) {
-    console.error("Failed to fetch employees:", error);
     throw new Error("Failed to fetch employees");
   }
 }
@@ -363,7 +348,6 @@ export async function fetchCottages(accommodationId) {
     );
     return result.documents;
   } catch (error) {
-    console.error("Failed to fetch cottages:", error);
     throw new Error("Failed to fetch cottages");
   }
 }
@@ -377,7 +361,6 @@ export async function fetchFacilities(accommodationId) {
     );
     return result.documents;
   } catch (error) {
-    console.error("Failed to fetch facilities:", error);
     throw new Error("Failed to fetch facilities");
   }
 }
@@ -392,7 +375,35 @@ export async function updateApprovalStatus(accommodationId, status) {
     );
     return result;
   } catch (error) {
-    console.error("Failed to update approval status:", error);
     throw new Error("Failed to update approval status");
+  }
+}
+
+// Activity Logs
+export async function fetchActivityLogs() {
+  try {
+    const currentUser = await getCurrentUser();
+    if (currentUser.role !== "admin") {
+      throw new Error("Unauthorized: Only admins can fetch activity logs.");
+    }
+
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.logsCollectionId,
+      [
+        Query.orderDesc("timestamp"),
+        Query.limit(100), // Adjust this number as needed
+      ]
+    );
+    return result.documents.map((log) => ({
+      id: log.$id,
+      timestamp: log.timestamp,
+      eventType: log.eventType,
+      message: log.message,
+      userId: log.userId,
+      details: log.details,
+    }));
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch activity logs");
   }
 }

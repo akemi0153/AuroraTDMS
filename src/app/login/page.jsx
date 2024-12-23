@@ -1,92 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GalleryVerticalEnd, LockIcon, MailIcon, UserIcon } from "lucide-react";
+import {
+  GalleryVerticalEnd,
+  LockIcon,
+  MailIcon,
+  UserIcon,
+  Loader2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createUser, getCurrentUser, signIn } from "@/services/appwrite";
 import { useAuthUserStore } from "@/services/user";
 import toast, { Toaster } from "react-hot-toast";
+import { motion } from "framer-motion";
 
 function ResizableImage() {
-  const [size, setSize] = useState({ width: 50, height: 50 }); // Smaller initial size
-  const [isDragging, setIsDragging] = useState(false);
-  const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setStartPosition({
-      x: e.clientX - size.width,
-      y: e.clientY - size.height,
-    });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    const newWidth = Math.max(150, e.clientX - startPosition.x);
-    const newHeight = Math.max(150, e.clientY - startPosition.y);
-
-    // Keep aspect ratio
-    const aspectRatio = 16 / 9;
-    const width = newWidth;
-    const height = width / aspectRatio;
-
-    setSize({ width, height });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const [size, setSize] = useState({ width: 120, height: 120 }); // Even smaller initial size
 
   return (
-    <div
-      className="relative w-full h-full flex flex-col items-center justify-center gap-4"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+    <motion.div
+      className="flex flex-col items-center justify-center gap-4"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
     >
-      <div
+      <motion.div
         className="relative"
         style={{
-          width: `${size.width}%`,
-          height: `${size.height}%`,
-          minWidth: "150px",
-          minHeight: "150px",
-          maxWidth: "100%",
-          maxHeight: "100%",
+          width: `${size.width}px`,
+          height: `${size.height}px`,
         }}
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 300 }}
       >
         <img
           src="./image/lap.png"
           alt="Aurora Tourism"
-          className="w-full h-full object-contain p-4"
+          className="w-full h-full object-contain rounded-full shadow-lg"
         />
-        <div
-          className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-[#00acc1]/20 hover:bg-[#00acc1]/40 rounded-tl-xl transition-colors"
-          onMouseDown={handleMouseDown}
-        />
-      </div>
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-[#00838f]">
-          Welcome to Aurora Tourism
-        </h2>
-        <p className="text-[#00acc1]">
-          Your gateway to extraordinary experiences
-        </p>
-      </div>
-    </div>
+      </motion.div>
+      <motion.div
+        className="text-center space-y-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+      >
+        <h2 className="text-2xl font-bold text-[#00838f]">Aurora Tourism</h2>
+        <p className="text-sm text-[#00acc1]">Discover the beauty of Aurora</p>
+      </motion.div>
+    </motion.div>
   );
 }
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("login");
-  const handleTabChange = (value) => {
-    setActiveTab(value);
-  };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -95,6 +66,10 @@ export default function LoginPage() {
   const router = useRouter();
 
   const { setAuthUser } = useAuthUserStore() || {};
+
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+  };
 
   const handleRoleRedirect = async () => {
     try {
@@ -111,7 +86,6 @@ export default function LoginPage() {
             break;
           case "inspector":
             toast.success(`Welcome back, ${currentUser.name}!`);
-            // Only allow access to their specific municipality dashboard
             switch (municipality) {
               case "Baler":
                 router.push("/inspector/baler");
@@ -154,7 +128,6 @@ export default function LoginPage() {
       const user = await signIn(email, password);
       setAuthUser(user);
 
-      // Set cookies for middleware
       document.cookie = `sessionId=${user.$id}; path=/`;
       document.cookie = `userRole=${user.role}; path=/`;
       document.cookie = `userMunicipality=${user.municipality || ""}; path=/`;
@@ -192,35 +165,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 bg-gradient-to-br from-[#e0f7fa] via-[#b2ebf2] to-[#80deea] p-6 md:p-10">
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <motion.div
+        className="flex flex-col gap-4 bg-gradient-to-br from-[#e0f7fa] via-[#b2ebf2] to-[#80deea] p-6 md:p-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="/homepage" className="flex items-center gap-2 font-medium">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#00acc1] text-white">
-              <GalleryVerticalEnd className="size-4" />
+          <motion.a
+            href="/"
+            className="flex items-center gap-2 font-medium text-[#00838f] hover:text-[#00acc1] transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#00acc1] text-white">
+              <GalleryVerticalEnd className="size-5" />
             </div>
             Aurora Tourism
-          </a>
+          </motion.a>
         </div>
         <Toaster />
         <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-md space-y-6 rounded-xl bg-white/80 p-6 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <h1 className="text-2xl font-bold text-[#00838f]">
-                Digital Management System
-              </h1>
-            </div>
+          <motion.div
+            className="w-full max-w-md space-y-6 rounded-xl bg-white/90 p-8 backdrop-blur-sm shadow-lg"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <ResizableImage />
             <Tabs defaultValue="login" onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-2 rounded-full bg-[#e0f7fa] p-1">
                 <TabsTrigger
                   value="login"
-                  className="rounded-full text-[#00acc1] data-[state=active]:bg-[#00acc1] data-[state=active]:text-white"
+                  className="rounded-full text-[#00acc1] data-[state=active]:bg-[#00acc1] data-[state=active]:text-white transition-all duration-300"
                 >
                   Sign In
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
-                  className="rounded-full text-[#00acc1] data-[state=active]:bg-[#00acc1] data-[state=active]:text-white"
+                  className="rounded-full text-[#00acc1] data-[state=active]:bg-[#00acc1] data-[state=active]:text-white transition-all duration-300"
                 >
                   Sign Up
                 </TabsTrigger>
@@ -243,7 +227,7 @@ export default function LoginPage() {
                         id="email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -260,7 +244,7 @@ export default function LoginPage() {
                       </Label>
                       <a
                         href="#"
-                        className="text-sm text-[#00acc1] hover:underline"
+                        className="text-sm text-[#00acc1] hover:underline transition-all duration-300"
                       >
                         Forgot password?
                       </a>
@@ -274,7 +258,7 @@ export default function LoginPage() {
                         id="password"
                         type="password"
                         placeholder="Enter your password"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -283,10 +267,13 @@ export default function LoginPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1]"
+                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1] transform hover:scale-105"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Loading..." : "Sign In"}
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    {isLoading ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
@@ -307,7 +294,7 @@ export default function LoginPage() {
                       <Input
                         id="name"
                         placeholder="Enter your full name"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         required
@@ -330,7 +317,7 @@ export default function LoginPage() {
                         id="signup-email"
                         type="email"
                         placeholder="Enter your email"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -353,7 +340,7 @@ export default function LoginPage() {
                         id="signup-password"
                         type="password"
                         placeholder="Create your password"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -376,7 +363,7 @@ export default function LoginPage() {
                         id="confirm-password"
                         type="password"
                         placeholder="Confirm your password"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1]"
+                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
@@ -385,22 +372,48 @@ export default function LoginPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1]"
+                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1] transform hover:scale-105"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Loading..." : "Sign Up"}
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    {isLoading ? "Signing Up..." : "Sign Up"}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
             <div className="text-center text-sm text-[#00838f]">
-              By continuing, you agree to Aurora Tourism Terms of Service and
-              Privacy Policy.
+              By continuing, you agree to Aurora Tourism's{" "}
+              <a href="#" className="text-[#00acc1] hover:underline">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="#" className="text-[#00acc1] hover:underline">
+                Privacy Policy
+              </a>
+              .
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
-      <div className="relative hidden lg:block"></div>
+      </motion.div>
+      <motion.div
+        className="relative hidden lg:block bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 1 }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-[#e0f7fa]/80 to-transparent" />
+        <div className="absolute bottom-10 left-10 text-white">
+          <h2 className="text-4xl font-bold mb-4">Explore Aurora</h2>
+          <p className="text-xl">
+            Discover the natural wonders and rich culture of Aurora Province
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 }

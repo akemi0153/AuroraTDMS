@@ -12,6 +12,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 // Initialize Appwrite client
 const client = new Client();
@@ -25,6 +27,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const loadUsers = async () => {
     setLoading(true);
@@ -60,6 +63,13 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.role && user.role.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   if (loading) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center">
@@ -88,30 +98,50 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 dark:bg-gray-900 dark:text-gray-100">
       <h1 className="mb-6 text-3xl font-bold">Users</h1>
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-sky-100">
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Search users..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
+        />
+      </div>
+      <Card className="overflow-hidden dark:bg-gray-800">
+        <CardHeader className="bg-sky-100 dark:bg-gray-700">
           <CardTitle>User List</CardTitle>
         </CardHeader>
         <CardContent>
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <p>No users found.</p>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-sky-50">
+                <TableRow className="bg-sky-50 hover:bg-sky-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200">
                   <TableHead className="font-semibold">Name</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
                   <TableHead className="font-semibold">Role</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.$id} className="hover:bg-sky-50">
-                    <TableCell>{user.name}</TableCell>
+                {filteredUsers.map((user) => (
+                  <TableRow
+                    key={user.$id}
+                    className="hover:bg-sky-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                  >
+                    <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role || "N/A"}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          user.role === "admin" ? "default" : "secondary"
+                        }
+                      >
+                        {user.role || "N/A"}
+                      </Badge>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

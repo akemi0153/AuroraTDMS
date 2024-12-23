@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -75,13 +75,8 @@ export default function Establishments() {
     setIsModalOpen(true);
   };
 
-  const generateReport = () => {
-    // Implement report generation logic here
-    toast.success("Report generated successfully!");
-  };
-
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 dark:bg-gray-900 dark:text-gray-100">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold">Establishments</h2>
         <div className="flex items-center space-x-4">
@@ -103,13 +98,9 @@ export default function Establishments() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={generateReport}>
-            <Download className="mr-2 h-4 w-4" />
-            Generate Report
-          </Button>
         </div>
       </div>
-      <Card>
+      <Card className="dark:bg-gray-800">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <p>Loading establishments...</p>
@@ -117,16 +108,23 @@ export default function Establishments() {
         ) : establishments && establishments.length > 0 ? (
           <Table>
             <TableHeader>
-              <TableRow className="bg-sky-50">
-                <TableHead className="w-[300px] font-semibold">Establishment Name</TableHead>
+              <TableRow className="bg-sky-50 hover:bg-sky-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200">
+                <TableHead className="font-semibold">
+                  Establishment Name
+                </TableHead>
                 <TableHead className="font-semibold">Municipality</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="text-right font-semibold">Actions</TableHead>
+                <TableHead className="text-right font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {currentItems.map((establishment) => (
-                <TableRow key={establishment.$id} className="hover:bg-sky-50">
+                <TableRow
+                  key={establishment.$id}
+                  className="hover:bg-sky-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                >
                   <TableCell className="font-medium">
                     {establishment.establishmentName}
                   </TableCell>
@@ -168,7 +166,7 @@ export default function Establishments() {
           </div>
         )}
         {establishments && establishments.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-4 bg-sky-50 rounded-b-lg">
+          <div className="flex items-center justify-between px-4 py-4 bg-sky-50 dark:bg-gray-700 rounded-b-lg">
             <p className="text-sm text-gray-700">
               Showing {indexOfFirstItem + 1} to{" "}
               {Math.min(indexOfLastItem, filteredEstablishments.length)} of{" "}
@@ -180,10 +178,12 @@ export default function Establishments() {
                 size="sm"
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
+                className="w-24"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
               </Button>
-              <span className="text-sm">
+              <span className="text-sm font-medium">
                 Page {currentPage} of {totalPages}
               </span>
               <Button
@@ -193,8 +193,10 @@ export default function Establishments() {
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                 }
                 disabled={currentPage === totalPages}
+                className="w-24"
               >
-                <ChevronRight className="h-4 w-4" />
+                Next
+                <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -202,14 +204,14 @@ export default function Establishments() {
       </Card>
       {selectedEstablishment && (
         <Dialog open={isModalOpen} onOpenChange={() => setIsModalOpen(false)}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] dark:bg-gray-800 dark:text-gray-100">
             <DialogHeader>
               <DialogTitle>
                 {selectedEstablishment.establishmentName}
               </DialogTitle>
               <DialogDescription>Establishment details</DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+            <ScrollArea className="h-[400px] w-full rounded-md border p-4 dark:border-gray-700">
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold">Municipality</h4>
@@ -272,15 +274,11 @@ export default function Establishments() {
                   <p>{selectedEstablishment.designation}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold">Date</h4>
+                  <h4 className="font-semibold">Appointment Date</h4>
                   <p>
-                    {new Date(selectedEstablishment.date).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Time</h4>
-                  <p>
-                    {new Date(selectedEstablishment.time).toLocaleTimeString()}
+                    {new Date(
+                      selectedEstablishment.appointmentDate
+                    ).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
@@ -295,4 +293,3 @@ export default function Establishments() {
     </div>
   );
 }
-

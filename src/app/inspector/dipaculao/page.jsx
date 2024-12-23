@@ -59,6 +59,68 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+
+const StackedAreaChart = ({ title, data, dataKeys, colors }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer
+          config={dataKeys.reduce(
+            (acc, key, index) => ({
+              ...acc,
+              [key]: {
+                label: key,
+                color: colors[index],
+              },
+            }),
+            {}
+          )}
+          className="h-[200px]"
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={data}
+              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              {dataKeys.map((key, index) => (
+                <Area
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stackId="1"
+                  stroke={colors[index]}
+                  fill={colors[index]}
+                />
+              ))}
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function DipaculaoPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,8 +134,11 @@ export default function DipaculaoPage() {
   const [viewEstablishment, setViewEstablishment] = useState(null);
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthorized, setIsAuthorized] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [isDeclineModalOpen, setDeclineModalOpen] = useState(false);
+  const [establishmentToDecline, setEstablishmentToDecline] = useState(null);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -85,15 +150,13 @@ export default function DipaculaoPage() {
           return;
         }
 
-        // Check if user is an inspector and assigned to Baler
         if (
           currentUser.role !== "inspector" ||
           currentUser.municipality !== "Dipaculao"
         ) {
           setIsAuthorized(false);
           setAuthChecked(true);
-          
-          // Show unauthorized message and redirect after delay
+
           setTimeout(() => {
             if (currentUser.role === "inspector") {
               switch (currentUser.municipality) {
@@ -128,7 +191,6 @@ export default function DipaculaoPage() {
         setIsAuthorized(true);
         setAuthChecked(true);
       } catch (error) {
-        console.error("Access check error:", error);
         toast.error("Authentication error");
         router.push("/login");
       }
@@ -164,10 +226,10 @@ export default function DipaculaoPage() {
     try {
       await signOut();
       toast.success("Logged out successfully");
+      router.push("/login");
     } catch (error) {
-      console.error("Logout error:", error);
       toast.error("Failed to logout properly");
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
   };
 
@@ -198,8 +260,8 @@ export default function DipaculaoPage() {
       });
 
       await databases.updateDocument(
-        "672cfccb002f456cb332", // Replace with your database ID
-        "6741d7f2000200706b21", // Replace with your collection ID
+        "672cfccb002f456cb332",
+        "6741d7f2000200706b21",
         selectedEstablishment.$id,
         {
           status: "approved",
@@ -225,7 +287,6 @@ export default function DipaculaoPage() {
 
       toast.success("Appointment successfully set!");
     } catch (error) {
-      console.error("Error setting appointment:", error);
       toast.error("Failed to set appointment. Please try again.");
     }
   };
@@ -238,14 +299,13 @@ export default function DipaculaoPage() {
   const updateStatusInDatabase = async (id, status) => {
     try {
       await databases.updateDocument(
-        "672cfccb002f456cb332", // Replace with your database ID
-        "6741d7f2000200706b21", // Replace with your collection ID
+        "672cfccb002f456cb332",
+        "6741d7f2000200706b21",
         id,
         { status: status }
       );
       console.log(`Status updated in database for establishment ${id}`);
     } catch (error) {
-      console.error("Error updating status in database:", error);
       toast.error("Failed to update status in database. Please try again.");
     }
   };
@@ -253,36 +313,81 @@ export default function DipaculaoPage() {
   const handleApprovalStatus = async (id, status) => {
     try {
       const establishment = accommodations.find((acc) => acc.$id === id);
-      if (
-        establishment.status === "approved" ||
-        establishment.status === "ApprovedAttachment"
-      ) {
+
+      if (establishment.status === "ApprovedAttachment") {
+        toast.error(
+          "Cannot change status of an establishment with a set appointment."
+        );
+        return;
+      }
+
+      if (status === "declined") {
+        setEstablishmentToDecline({ id, currentStatus: establishment.status });
+        setDeclineModalOpen(true);
+        return;
+      }
+
+      if (establishment.status === "approved") {
         toast.error("Cannot change status of an approved form.");
         return;
       }
+
       await updateStatusInDatabase(id, status);
       setAccommodations(
         accommodations.map((acc) => (acc.$id === id ? { ...acc, status } : acc))
       );
       toast.success(`Establishment status updated to ${status}.`);
     } catch (error) {
-      console.error("Error updating approval status:", error);
       toast.error("Failed to update status. Please try again.");
+    }
+  };
+
+  const handleDeclineSubmit = async () => {
+    if (!declineReason.trim()) {
+      toast.error("Please provide a reason for declining");
+      return;
+    }
+
+    try {
+      await databases.updateDocument(
+        "672cfccb002f456cb332",
+        "6741d7f2000200706b21",
+        establishmentToDecline.id,
+        {
+          status: "declined",
+          declineReason: declineReason,
+        }
+      );
+
+      setAccommodations(
+        accommodations.map((acc) =>
+          acc.$id === establishmentToDecline.id
+            ? { ...acc, status: "declined", declineReason }
+            : acc
+        )
+      );
+
+      setDeclineModalOpen(false);
+      setDeclineReason("");
+      setEstablishmentToDecline(null);
+      toast.success("Establishment declined successfully");
+    } catch (error) {
+      toast.error("Failed to decline establishment");
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-500";
+        return "bg-yellow-100 text-yellow-800 border border-yellow-300";
       case "approved":
-        return "bg-green-500";
+        return "bg-green-100 text-green-800 border border-green-300";
       case "declined":
-        return "bg-red-500";
+        return "bg-red-100 text-red-800 border border-red-300";
       case "ApprovedAttachment":
-        return "bg-blue-500";
+        return "bg-blue-100 text-blue-800 border border-blue-300";
       default:
-        return "bg-gray-500";
+        return "bg-gray-100 text-gray-800 border border-gray-300";
     }
   };
 
@@ -301,40 +406,80 @@ export default function DipaculaoPage() {
     }
   };
 
+  const fadeIn = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    transition: { duration: 0.5 },
+  };
+
+  const slideIn = {
+    initial: { x: -20, opacity: 0 },
+    animate: { x: 0, opacity: 1 },
+    transition: { duration: 0.5 },
+  };
+
   if (!authChecked) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authorization...</p>
-        </div>
+      <div className="flex h-screen items-center justify-center bg-gradient-to-r from-green-500 to-teal-600">
+        <motion.div
+          className="text-center text-white"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl font-semibold">Checking authorization...</p>
+        </motion.div>
       </div>
     );
   }
 
   if (!isAuthorized) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authorization...</p>
-        </div>
+      <div className="flex h-screen items-center justify-center bg-gradient-to-r from-red-500 to-pink-600">
+        <motion.div
+          className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="text-center">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-red-500 mb-2">
+              Unauthorized Access
+            </h1>
+            <p className="text-gray-600 mb-4">
+              You are not authorized to access the Dipaculao dashboard.
+              Redirecting you to the appropriate page...
+            </p>
+            <div className="animate-pulse">
+              <div className="h-2 bg-red-200 rounded w-3/4 mx-auto"></div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <aside className="fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0">
+    <div className="flex h-screen bg-gradient-to-br from-green-50 to-teal-100">
+      <motion.aside
+        className="fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0"
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="flex h-16 items-center justify-center border-b">
-          <span className="text-xl font-semibold">Dipaculao Dashboard</span>
+          <span className="text-xl font-semibold text-teal-600">
+            Dipaculao Dashboard
+          </span>
         </div>
         <nav className="flex-1 overflow-auto py-4">
           <div className="flex flex-col space-y-1 px-3">
             <Button
               variant="ghost"
               className={`justify-start ${
-                pathname === "/" ? "bg-gray-100" : ""
+                pathname === "/" ? "bg-teal-100 text-teal-700" : ""
               }`}
               asChild
             >
@@ -346,7 +491,7 @@ export default function DipaculaoPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                pathname === "/settings" ? "bg-gray-100" : ""
+                pathname === "/settings" ? "bg-teal-100 text-teal-700" : ""
               }`}
               asChild
             >
@@ -357,7 +502,7 @@ export default function DipaculaoPage() {
             </Button>
             <Button
               variant="ghost"
-              className="justify-start mt-auto"
+              className="justify-start mt-auto text-red-600 hover:bg-red-100 hover:text-red-700"
               onClick={handleLogout}
             >
               <LogOut className="mr-2 h-5 w-5" />
@@ -365,11 +510,24 @@ export default function DipaculaoPage() {
             </Button>
           </div>
         </nav>
-      </aside>
+      </motion.aside>
       <main className="flex-1 overflow-auto">
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white px-6 shadow-sm">
+        <motion.header
+          className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white px-6 shadow-sm"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="flex items-center space-x-4">
-            <form className="relative">
+            <motion.div
+              initial={{ scale: 1 }}
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                repeatType: "reverse",
+              }}
+            >
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
                 type="search"
@@ -378,75 +536,58 @@ export default function DipaculaoPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </form>
+            </motion.div>
           </div>
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
           </div>
-        </header>
+        </motion.header>
         <div className="container mx-auto p-6">
-          <h1 className="mb-6 text-3xl font-bold">Dipaculao Overview</h1>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">
-                  Total Establishments
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {accommodations.length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {
-                    accommodations.filter((acc) => acc.status === "pending")
-                      .length
-                  }
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Approved</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {
-                    accommodations.filter((acc) => acc.status === "approved")
-                      .length
-                  }
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">
-                  Appointments Set
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {
-                    accommodations.filter(
-                      (acc) => acc.status === "ApprovedAttachment"
-                    ).length
-                  }
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-4">Establishments</h2>
-            <Card>
+          <motion.h1
+            className="mb-6 text-3xl font-bold text-teal-800"
+            variants={fadeIn}
+            initial="initial"
+            animate="animate"
+          >
+            Dipaculao Overview
+          </motion.h1>
+          <motion.div
+            className="grid gap-6 md:grid-cols-1 lg:grid-cols-1"
+            variants={fadeIn}
+            initial="initial"
+            animate="animate"
+          >
+            <motion.div
+              variants={slideIn}
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="bg-gradient-to-br from-teal-500 to-green-600 text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">
+                    Total Establishments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {accommodations.length}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+          <motion.div
+            className="mt-8"
+            variants={fadeIn}
+            initial="initial"
+            animate="animate"
+          >
+            <h2 className="text-2xl font-semibold mb-4 text-teal-700">
+              Establishments
+            </h2>
+            <Card className="overflow-hidden">
               {loading ? (
                 <div className="flex h-32 items-center justify-center">
                   <p>Loading data...</p>
@@ -458,16 +599,27 @@ export default function DipaculaoPage() {
               ) : filteredAccommodations.length > 0 ? (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Establishment Name</TableHead>
-                      <TableHead>Municipality</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                    <TableRow className="bg-teal-50">
+                      <TableHead className="font-semibold text-teal-900">
+                        Establishment Name
+                      </TableHead>
+                      <TableHead className="font-semibold text-teal-900">
+                        Municipality
+                      </TableHead>
+                      <TableHead className="font-semibold text-teal-900">
+                        Status
+                      </TableHead>
+                      <TableHead className="font-semibold text-teal-900">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredAccommodations.map((accommodation) => (
-                      <TableRow key={accommodation.$id}>
+                      <TableRow
+                        key={accommodation.$id}
+                        className="hover:bg-gray-50"
+                      >
                         <TableCell className="font-medium">
                           {accommodation.establishmentName}
                         </TableCell>
@@ -478,7 +630,7 @@ export default function DipaculaoPage() {
                               <Badge
                                 className={`cursor-pointer ${getStatusColor(
                                   accommodation.status
-                                )}`}
+                                )} px-2 py-1 text-xs font-semibold rounded-full`}
                               >
                                 {getStatusIcon(accommodation.status)}
                                 <span className="ml-2">
@@ -514,18 +666,22 @@ export default function DipaculaoPage() {
                           <div className="flex space-x-2">
                             <Button
                               variant="outline"
+                              size="sm"
                               onClick={() =>
                                 handleSetAppointment(accommodation)
                               }
                               disabled={accommodation.status !== "approved"}
+                              className="text-teal-600 border-teal-600 hover:bg-teal-50"
                             >
                               Set Appointment
                             </Button>
                             <Button
                               variant="outline"
+                              size="sm"
                               onClick={() =>
                                 handleViewEstablishment(accommodation)
                               }
+                              className="text-green-600 border-green-600 hover:bg-green-50"
                             >
                               View Details
                             </Button>
@@ -541,46 +697,7 @@ export default function DipaculaoPage() {
                 </div>
               )}
             </Card>
-          </div>
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-4">Form Status History</h2>
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Establishment Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {accommodations.map((accommodation) => (
-                    <TableRow key={accommodation.$id}>
-                      <TableCell className="font-medium">
-                        {accommodation.establishmentName}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(accommodation.status)}>
-                          {getStatusIcon(accommodation.status)}
-                          <span className="ml-2">{accommodation.status}</span>
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(accommodation.$updatedAt).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "2-digit",
-                          }
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          </div>
+          </motion.div>
         </div>
       </main>
       <Sheet
@@ -661,7 +778,9 @@ export default function DipaculaoPage() {
                         <strong className="capitalize">
                           {key.replace(/([A-Z])/g, " $1").trim()}:
                         </strong>{" "}
-                        <span>{value}</span>
+                        <span>
+                          {key === "declineReason" && !value ? "N/A" : value}
+                        </span>
                       </div>
                     ))}
               </ScrollArea>
@@ -692,6 +811,43 @@ export default function DipaculaoPage() {
               </ScrollArea>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isDeclineModalOpen} onOpenChange={setDeclineModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Decline Establishment</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for declining this establishment
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-4">
+              <label htmlFor="declineReason" className="text-sm font-medium">
+                Reason for Declining
+              </label>
+              <textarea
+                id="declineReason"
+                className="min-h-[100px] w-full rounded-md border p-3"
+                placeholder="Enter reason..."
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeclineModalOpen(false);
+                  setDeclineReason("");
+                  setEstablishmentToDecline(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleDeclineSubmit}>Submit</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       <ToastContainer />

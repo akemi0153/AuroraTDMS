@@ -1,683 +1,474 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
-  MapPin,
-  Star,
-  Coffee,
-  Wifi,
-  Dumbbell,
-  Search,
-  Map,
-  LifeBuoy,
-  Sparkles,
-  Car,
-  ChevronDown,
-  Sun,
-  Waves,
-  Mountain,
+  Hotel,
+  ClipboardCheck,
+  ShieldCheck,
+  TrendingUp,
   Users,
-  Phone,
-  Mail,
-  Globe,
-  Clock,
+  Bell,
+  Award,
+  ClipboardList,
+  Search,
+  CheckCircle,
+  BarChart2,
+  FileText,
+  Building,
+  Zap,
 } from "lucide-react";
 
-const hotels = [
-  {
-    id: 1,
-    name: "Costa Pacifica",
-    rating: 4.5,
-    price: 8250,
-    image: "./image/costa.png",
-    location: "Baler, Aurora",
-    amenities: ["wifi", "gym", "restaurant", "pool", "spa"],
-    description:
-      "Luxurious beachfront resort with stunning ocean views and world-class amenities.",
-    contact: {
-      phone: "+63 2 8519 4249",
-      email: "info@costapacificabaler.com",
-      website: "https://www.costapacificabaler.com",
+export default function CATMS() {
+  const features = [
+    {
+      icon: ClipboardCheck,
+      title: "Streamlined Inspections",
+      description:
+        "Reduce inspection time by 60% with our digital checklists. Ensure thorough room-by-room evaluations without the paperwork hassle.",
     },
-    checkIn: "2:00 PM",
-    checkOut: "12:00 PM",
-    photos: [
-      "/image/costa-1.jpg",
-      "/image/costa-2.jpg",
-      "/image/costa-3.jpg",
-      "/image/costa-4.jpg",
-    ],
-  },
-  {
-    id: 2,
-    name: "Bay's Inn Resort",
-    rating: 4.2,
-    price: 6600,
-    image: "/image/bay.png",
-    location: "Baler, Aurora",
-    amenities: ["wifi", "restaurant", "parking"],
-    description:
-      "Cozy beachfront resort offering comfortable accommodations and easy access to Sabang Beach.",
-    contact: {
-      phone: "+63 919 991 3075",
-      email: "baysinnresort@gmail.com",
-      website: "https://www.baysinnresort.com",
+    {
+      icon: ShieldCheck,
+      title: "Compliance Assurance",
+      description:
+        "Stay updated with the latest hospitality regulations. Our system adapts to new guidelines, keeping your property compliant and guest-ready.",
     },
-    checkIn: "3:00 PM",
-    checkOut: "11:00 AM",
-    photos: ["/image/bay-1.jpg", "/image/bay-2.jpg"],
-  },
-  {
-    id: 3,
-    name: "Aliya Surf Camp",
-    rating: 4.0,
-    price: 5500,
-    image: "/image/resort.jpg",
-    location: "Baler, Aurora",
-    amenities: ["wifi", "parking", "restaurant"],
-    description:
-      "Laid-back surf camp offering surf lessons, board rentals, and beachfront accommodations.",
-    contact: {
-      phone: "+63 917 794 7749",
-      email: "aliyasurfcamp@gmail.com",
-      website: "https://www.aliyasurfcamp.com",
+    {
+      icon: TrendingUp,
+      title: "Performance Insights",
+      description:
+        "Gain valuable insights into your property's performance. Track improvements, identify areas for enhancement, and benchmark against industry standards.",
     },
-    checkIn: "1:00 PM",
-    checkOut: "10:00 AM",
-    photos: ["/image/aliya-1.jpg", "/image/aliya-2.jpg", "/image/aliya-3.jpg"],
-  },
-];
+    {
+      icon: Users,
+      title: "Staff Collaboration",
+      description:
+        "Enhance communication between inspectors, management, and staff. Assign tasks, track progress, and ensure swift resolution of identified issues.",
+    },
+    {
+      icon: Bell,
+      title: "Instant Notifications",
+      description:
+        "Receive real-time alerts on critical issues. Stay informed about inspection progress and urgent matters requiring immediate attention.",
+    },
+    {
+      icon: Award,
+      title: "Quality Assurance",
+      description:
+        "Maintain consistently high standards across all rooms and facilities. Uphold your property's reputation and ensure guest satisfaction.",
+    },
+  ];
 
-const amenitiesOptions = [
-  { value: "wifi", label: "Wi-Fi", icon: Wifi },
-  { value: "gym", label: "Gym", icon: Dumbbell },
-  { value: "restaurant", label: "Restaurant", icon: Coffee },
-  { value: "pool", label: "Pool", icon: LifeBuoy },
-  { value: "spa", label: "Spa", icon: Sparkles },
-  { value: "parking", label: "Parking", icon: Car },
-];
+  const inspectionSteps = [
+    {
+      icon: ClipboardList,
+      title: "Pre-Inspection",
+      description:
+        "Schedule inspections and prepare digital checklists. Access property history, previous reports, and specific room details for targeted evaluations.",
+    },
+    {
+      icon: Search,
+      title: "On-Site Inspection",
+      description:
+        "Conduct thorough room-by-room inspections using our mobile app. Document findings with photos, notes, and ratings in real-time.",
+    },
+    {
+      icon: CheckCircle,
+      title: "Evaluation & Reporting",
+      description:
+        "Generate comprehensive reports instantly. Our AI-assisted system helps identify trends, suggest improvements, and prioritize actions.",
+    },
+    {
+      icon: BarChart2,
+      title: "Follow-up & Improvement",
+      description:
+        "Track the implementation of recommendations. Set deadlines, assign tasks to staff, and monitor progress to ensure continuous improvement.",
+    },
+  ];
 
-const attractions = [
-  {
-    name: "Sabang Beach",
-    description:
-      "A 2-kilometer stretch of gray sand beach known for its surfing waves. Perfect for beginners and experienced surfers alike.",
-    icon: Waves,
-    activities: [
-      "Surfing lessons for beginners",
-      "Advanced surfing spots for experienced surfers",
-      "Beach volleyball",
-      "Sunbathing and relaxation",
-      "Beachside dining",
-      "Sunset watching",
-    ],
-    bestTime:
-      "The best time to visit Sabang Beach for surfing is from October to March when the waves are at their best. However, the beach is beautiful year-round and offers a great escape even during the off-season.",
-  },
-  {
-    name: "Dicasalarin Cove",
-    description:
-      "A secluded white sand beach surrounded by rolling hills. Offers breathtaking views and is ideal for swimming and picnics.",
-    icon: Sun,
-    activities: [
-      "Swimming in crystal clear waters",
-      "Picnicking on the beach",
-      "Hiking to the nearby lighthouse",
-      "Photography of the scenic landscape",
-      "Birdwatching",
-    ],
-    howToGetThere:
-      "Dicasalarin Cove is about 30 minutes drive from Baler town proper. You'll need to arrange transportation as public vehicles don't regularly go to this area. Many local tour operators offer trips to the cove.",
-  },
-  {
-    name: "Diguisit Falls",
-    description:
-      "A series of cascading waterfalls surrounded by lush greenery. A great spot for nature lovers and photographers.",
-    icon: Mountain,
-    activities: [
-      "Swimming in the natural pools",
-      "Rock climbing",
-      "Nature photography",
-      "Picnicking",
-      "Short hiking trails",
-    ],
-    bestTime:
-      "The best time to visit Diguisit Falls is during the rainy season (June to October) when the water flow is at its peak. However, be cautious of potential flash floods during heavy rains. Early morning visits are recommended for the best lighting for photography.",
-  },
-];
+  const faqItems = [
+    {
+      question: "How does the system improve inspection efficiency?",
+      answer:
+        "Our system digitizes the entire inspection process, from scheduling to reporting. This reduces paperwork, eliminates manual data entry, and allows for real-time collaboration, significantly speeding up inspections while improving accuracy and consistency across all rooms and facilities.",
+    },
+    {
+      question:
+        "Can the system be customized for different types of accommodations?",
+      answer:
+        "Yes, our system is highly flexible and can be tailored to various accommodation types, including hotels, resorts, vacation rentals, and boutique properties. Customizable checklists and evaluation criteria ensure that inspections are relevant to your specific property type and brand standards.",
+    },
+    {
+      question: "How does the system ensure data security and guest privacy?",
+      answer:
+        "We adhere strictly to the Philippine Data Protection Law to safeguard all information. Our system employs robust encryption and security measures to protect data. Access to sensitive information is tightly controlled based on user roles, and we ensure that all data handling practices comply with the requirements set forth by the Philippine data protection regulations.",
+    },
+    {
+      question:
+        "Can the system integrate with our existing property management software?",
+      answer:
+        "Yes, our system is designed with integration in mind. It can seamlessly connect with various property management systems, housekeeping software, and maintenance tracking tools. This ensures a smooth flow of information across your entire operation, from front desk to back-of-house.",
+    },
+    {
+      question: "How does the system help in maintaining brand standards?",
+      answer:
+        "The system includes customizable checklists that reflect your brand standards. It provides detailed reports and actionable insights after each inspection, allowing you to track compliance with brand requirements. The system also offers trend analysis to help identify recurring issues that may affect brand consistency.",
+    },
+    {
+      question: "What kind of support and training do you offer?",
+      answer:
+        "We provide comprehensive onboarding and training for all users, including inspectors, management, and staff. Our support team is available 24/7 to assist with any questions or issues. We also offer regular webinars and updates on best practices in accommodation inspection and quality management.",
+    },
+  ];
 
-const faqs = [
-  {
-    question: "What's the best time to visit Central Aurora?",
-    answer:
-      "The best time to visit Central Aurora is during the dry season, from November to April. This period offers the most favorable weather for outdoor activities and beach experiences.",
-  },
-  {
-    question: "How do I get to Central Aurora?",
-    answer:
-      "You can reach Central Aurora by bus from Manila, which takes about 5-6 hours. Alternatively, you can drive or hire a private car for more flexibility in your travel plans.",
-  },
-  {
-    question: "What are the must-visit attractions in Central Aurora?",
-    answer:
-      "Some must-visit attractions include Sabang Beach for surfing, Dicasalarin Cove for its pristine beauty, Ditumabo Mother Falls for nature lovers, and the historical Baler Church.",
-  },
-  {
-    question: "Is Central Aurora suitable for family trips?",
-    answer:
-      "Yes, Central Aurora offers a variety of activities suitable for families, including beach outings, historical sites, and nature trips. Many resorts also offer family-friendly accommodations and facilities.",
-  },
-  {
-    question: "What should I pack for a trip to Central Aurora?",
-    answer:
-      "Pack light, breathable clothing, swimwear, sunscreen, insect repellent, and comfortable walking shoes. If you plan to surf, you might want to bring your own gear, though rentals are available.",
-  },
-];
+  const [expandedFAQ, setExpandedFAQ] = useState(null);
 
-            onClick={() => setShowMap(!showMap)}
-            className="min-w-[120px] px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors"
-          >
-            {showMap ? "Hide Map" : "Show Map"}
-            <Map className="ml-2 h-4 w-4 inline" />
-          </button>
-        </motion.div>
+  const toggleFAQ = (index) => {
+    if (expandedFAQ === index) {
+      setExpandedFAQ(null);
+    } else {
+      setExpandedFAQ(index);
+    }
+  };
 
-        <AnimatePresence mode="wait">
-          {showMap ? (
-            <motion.div
-              key="map"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="mb-8 bg-white p-4 rounded-lg shadow-md"
-            >
-              <div className="relative w-full aspect-[16/9] bg-white rounded-lg overflow-hidden">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3941.9999999999995!2d121.56000000000002!3d15.760000000000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c00000000001%3A0x0000000000000000!2sBaler%2C%20Aurora%2C%20Philippines!5e0!3m2!1sen!2sus!4v1610000000000!5m2!1sen!2sus"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
-                <div className="absolute bottom-4 right-4 bg-white p-2 rounded-lg shadow-md">
-                  <p className="text-sm font-semibold">Central Aurora Region</p>
-                  <p className="text-xs text-gray-600">
-                    Showing {filteredHotels.length} hotels
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <header className="bg-indigo-700 text-white sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/image/lap.png"
+                alt="AccomoInspect Logo"
+                width={70}
+                height={70}
+              />
+            </Link>
+            <nav className="hidden md:block">
+              <ul className="flex space-x-6">
+                <li>
+                  <Link href="/" className="hover:underline">
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#features" className="hover:underline">
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#process" className="hover:underline">
+                    Process
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#faq" className="hover:underline">
+                    FAQ
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section className="bg-gradient-to-b from-indigo-800 to-indigo-600 py-20">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-center">
               <motion.div
-                key="grid"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                className="md:w-1/2 mb-8 md:mb-0"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
               >
-                {currentHotels.length > 0 ? (
-                  currentHotels.map((hotel, index) => (
-                    <motion.div
-                      key={hotel.id}
-                      initial={{ opacity: 0, y: 50 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
-                        <div className="p-0">
-                          <div className="relative">
-                            <img
-                              src={hotel.image}
-                              alt={hotel.name}
-                              className="w-full h-48 object-cover"
-                            />
-                            <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-full text-sm font-semibold text-gray-800">
-                              ₱{hotel.price}/night
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="text-xl font-semibold">
-                            {hotel.name}
-                          </h3>
-                          <div className="flex items-center mt-2">
-                            <Star className="h-5 w-5 text-yellow-400 mr-1" />
-                            {hotel.rating.toFixed(1)}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-2">
-                            {hotel.description}
-                          </p>
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {hotel.amenities.map((amenity) => {
-                              const amenityOption = amenitiesOptions.find(
-                                (a) => a.value === amenity
-                              );
-                              if (amenityOption) {
-                                return (
-                                  <span
-                                    key={amenity}
-                                    className="bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-0.5 rounded flex items-center"
-                                  >
-                                    <amenityOption.icon className="h-3 w-3 mr-1" />
-                                    {amenityOption.label}
-                                  </span>
-                                );
-                              }
-                              return null;
-                            })}
-                          </div>
-                        </div>
-                        <div className="p-4 border-t border-gray-200">
-                          <button
-                            className="w-full px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors"
-                            onClick={() => openHotelDetails(hotel)}
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-10">
-                    <p className="text-xl font-semibold text-gray-600">
-                      No hotels found matching your criteria.
-                    </p>
-                    <p className="text-gray-500 mt-2">
-                      Try adjusting your filters or search terms.
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-              <div className="flex justify-center gap-2">
-                {Array.from(
-        </section>
-
-        <section ref={contactRef} className="py-12">
-          <h2 className="text-3xl font-bold mb-6">Contact Us</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Get in Touch</h3>
-                <form onSubmit={(e) => e.preventDefault()}>
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        htmlFor="name"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Name
-                      </label>
-                      <input
-                        id="name"
-                        type="text"
-                        placeholder="Your name"
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400
-                        focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="email"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Email
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        placeholder="Your email"
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400
-                        focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="message"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Message
-                      </label>
-                      <textarea
-                        id="message"
-                        placeholder="Your message"
-                        rows={4}
-                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400
-                        focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                      ></textarea>
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-                    >
-                      Send Message
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-4">
-                  Contact Information
-                </h3>
-                <address className="not-italic">
-                  <p>123 Explorer Street</p>
-                  <p>Baler, Aurora</p>
-                  <p>Philippines</p>
-                  <p className="mt-4">Phone: +63 123 456 7890</p>
-                  <p>Email: info@centralaurora.com</p>
-                </address>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section ref={faqRef} className="py-12">
-          <h2 className="text-3xl font-bold mb-6">
-            Frequently Asked Questions
-          </h2>
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-4">
-                Common Questions About Central Aurora
-              </h3>
-              <div className="space-y-4">
-                {faqs.map((faq, index) => (
-                  <div
-                    key={index}
-                    className="border border-gray-200 rounded-md"
+                <h1 className="text-4xl md:text-5xl font-bold text-sky-100 mb-4">
+                  Central Aurora Tourism Management System
+                </h1>
+                <p className="text-xl text-sky-200 mb-6">
+                  C.A.T.M.S: Your all-in-one solution for efficient,
+                  transparent, and standardized accommodation inspections.
+                  Empower your team to maintain world-class standards and
+                  enhance guest satisfaction.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="bg-amber-400 text-indigo-900 hover:bg-amber-300"
                   >
-                    <button
-                      onClick={() =>
-                        setOpenAccordionItem(
-                          openAccordionItem === index ? null : index
-                        )
-                      }
-                      className="w-full px-4 py-2 text-left font-medium focus:outline-none"
+                    Watch Demo
+                  </Button>
+                  <Link href="/login">
+                    <Button
+                      size="lg"
+                      variant="secondary"
+                      className="bg-amber-400 text-indigo-900 hover:bg-amber-300"
                     >
-                      {faq.question}
-                    </button>
-                    {openAccordionItem === index && (
-                      <div className="px-4 py-2 bg-gray-50">{faq.answer}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section ref={attractionsRef} className="py-12">
-          <h2 className="text-3xl font-bold mb-6">Popular Attractions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {attractions.map((attraction) => (
-              <div
-                key={attraction.name}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
-              >
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2 flex items-center">
-                    <attraction.icon className="h-6 w-6 mr-2 text-teal-600" />
-                    {attraction.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {attraction.description}
-                  </p>
-                  <h4 className="font-semibold mb-2">Activities:</h4>
-                  <ul className="list-disc pl-5 mb-4">
-                    {attraction.activities.map((activity, index) => (
-                      <li key={index} className="text-sm text-gray-600">
-                        {activity}
-                      </li>
-                    ))}
-                  </ul>
-                  {attraction.bestTime && (
-                    <>
-                      <h4 className="font-semibold mb-2">
-                        Best Time to Visit:
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        {attraction.bestTime}
-                      </p>
-                    </>
-                  )}
-                  {attraction.howToGetThere && (
-                    <>
-                      <h4 className="font-semibold mb-2">How to Get There:</h4>
-                      <p className="text-sm text-gray-600">
-                        {attraction.howToGetThere}
-                      </p>
-                    </>
-                  )}
+                      Sign Up
+                    </Button>
+                  </Link>
                 </div>
-              </div>
-            ))}
+              </motion.div>
+              <motion.div
+                className="md:w-1/2"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Image
+                  src="/placeholder.svg?height=400&width=600"
+                  alt="Accommodation Inspection"
+                  width={600}
+                  height={400}
+                  className="rounded-lg shadow-lg"
+                />
+              </motion.div>
+            </div>
           </div>
         </section>
 
-        <section ref={privacyPolicyRef} className="py-12">
-          <h2 className="text-3xl font-bold mb-6">Privacy Policy</h2>
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">
-                  1. Information We Collect
-                </h3>
-                <p>
-                  We collect information you provide directly to us, such as
-                  when you create an account, make a booking, or contact us for
-                  support. This may include your name, email address, phone
-                  number, and payment information.
-                </p>
-              </div>
+        <section id="features" className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12 text-teal-800">
+              Why Choose C.A.T.M.S?
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {features.map((feature, index) => (
+                <Card
+                  key={index}
+                  className="hover:shadow-lg transition-shadow duration-300"
+                >
+                  <CardContent className="p-6">
+                    <feature.icon size={40} className="text-indigo-600 mb-4" />
+                    <h3 className="text-xl font-semibold mb-2 text-indigo-800">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">
-                  2. How We Use Your Information
-                </h3>
-                <p>
-                  We use the information we collect to provide, maintain, and
-                  improve our services, to process your bookings, to communicate
-                  with you, and to personalize your experience on our platform.
-                </p>
-              </div>
+          </div>
+        </section>
+
+        <section id="process" className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12 text-teal-800">
+              Streamlined Inspection Process
+            </h2>
+            <Tabs defaultValue="pre-inspection" className="w-full">
+              <TabsList className="grid w-full grid-cols-4 mb-8">
+                {inspectionSteps.map((step, index) => (
+                  <TabsTrigger
+                    key={index}
+                    value={step.title.toLowerCase().replace(" ", "-")}
+                    className="text-indigo-600 data-[state=active]:bg-indigo-100"
+                  >
+                    {step.title}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {inspectionSteps.map((step, index) => (
+                <TabsContent
+                  key={index}
+                  value={step.title.toLowerCase().replace(" ", "-")}
+                >
+                  <Card className="border-teal-200">
+                    <CardContent className="p-6">
+                      <div className="flex items-center mb-4">
+                        <step.icon size={24} className="text-teal-600 mr-4" />
+                        <h3 className="text-2xl font-bold text-teal-800">
+                          {step.title}
+                        </h3>
+                      </div>
+                      <p className="text-gray-600 mb-4">{step.description}</p>
+                      <div className="aspect-video bg-teal-50 rounded-lg flex items-center justify-center">
+                        <p className="text-teal-500">
+                          Interactive demo or video placeholder
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        </section>
+
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12 text-teal-800">
+              Empowering Your Accommodation Business
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <FileText size={48} className="text-teal-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2 text-teal-800">
+                    For Inspectors
+                  </h3>
+                  <p className="text-gray-600">
+                    Streamline your workflow, access real-time data, and conduct
+                    more efficient room-by-room inspections.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Building size={48} className="text-teal-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2 text-teal-800">
+                    For Property Managers
+                  </h3>
+                  <p className="text-gray-600">
+                    Maintain high standards, track performance, and improve
+                    guest satisfaction with data-driven insights.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Zap size={48} className="text-teal-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2 text-teal-800">
+                    Administrator of Provincial Tourism Office
+                  </h3>
+                  <p className="text-gray-600">
+                    Gain comprehensive insights, ensure brand consistency, and
+                    drive continuous improvement across your properties using
+                    our web-based system.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">
-                  3. Information Sharing and Disclosure
-                </h3>
-                <p>
-                  We do not sell or rent your personal information to third
-                  parties. We may share your information with our service
-                  providers, partners, and as required by law.
-                </p>
-              </div>
+          </div>
+        </section>
+
+        <section id="faq" className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12 text-teal-800">
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-4 w-full max-w-3xl mx-auto">
+              {faqItems.map((item, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <button
+                      className="flex justify-between items-center w-full p-4 text-left focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      onClick={() => toggleFAQ(index)}
+                    >
+                      <span className="text-lg font-semibold text-teal-700">
+                        {item.question}
+                      </span>
+                      {expandedFAQ === index ? (
+                        <ChevronUp className="h-5 w-5 text-teal-500" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-teal-500" />
+                      )}
+                    </button>
+                    <AnimatePresence>
+                      {expandedFAQ === index && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="px-4 pb-4"
+                        >
+                          <p className="text-gray-600">{item.answer}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">4. Data Security</h3>
-                <p>
-                  We implement appropriate technical and organizational measures
-                  to protect the security of your personal information against
-                  unauthorized access, disclosure, alteration, and destruction.
-                </p>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">5. Your Rights</h3>
-                <p>
-                  You have the right to access, correct, or delete your personal
-                  information. You may also have the right to restrict or object
-                  to certain processing of your data.
-                </p>
-              </div>
+          </div>
+        </section>
+
+        <section className="bg-indigo-800 text-white py-20">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-4">
+              Ready to Elevate Your Accommodation Inspections?
+            </h2>
+            <p className="text-xl mb-8">
+              Join C.A.T.M.S today and experience the future of hospitality
+              quality management.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="bg-amber-400 text-indigo-900 hover:bg-amber-300"
+              >
+                Request Demo
+              </Button>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="bg-white py-12 mt-8">
+      <footer className="bg-gray-800 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <h4 className="text-lg font-semibold mb-4">About Us</h4>
-              <p className="text-sm text-gray-600">
-                Central Aurora Explorer is your gateway to discovering the
-                beauty and adventure of Aurora Province, Philippines.
+              <h3 className="text-lg font-semibold mb-4">
+                About Central Aurora Tourism Management System
+              </h3>
+              <p className="text-sm">
+                C.A.T.M.S is the leading accommodation inspection management
+                system, streamlining quality control processes for hotels,
+                resorts, and vacation rentals worldwide. Our mission is to
+                elevate hospitality standards and enhance guest experiences
+                through efficient, data-driven inspections.
               </p>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
                 <li>
-                  <button
-                    onClick={() => scrollToSection(aboutRef)}
-                    className="text-sm text-gray-600 hover:text-teal-600"
-                  >
-                    About
-                  </button>
+                  <Link href="#features" className="text-sm hover:underline">
+                    Features
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => scrollToSection(contactRef)}
-                    className="text-sm text-gray-600 hover:text-teal-600"
-                  >
-                    Contact
-                  </button>
+                  <Link href="#process" className="text-sm hover:underline">
+                    Our Process
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => scrollToSection(faqRef)}
-                    className="text-sm text-gray-600 hover:text-teal-600"
-                  >
+                  <Link href="#faq" className="text-sm hover:underline">
                     FAQ
-                  </button>
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => scrollToSection(privacyPolicyRef)}
-                    className="text-sm text-gray-600 hover:text-teal-600"
-                  >
+                  <Link href="/privacy" className="text-sm hover:underline">
                     Privacy Policy
-                  </button>
+                  </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4">Contact Us</h4>
-              <address className="text-sm text-gray-600 not-italic">
-                <p>123 Explorer Street</p>
-                <p>Baler, Aurora</p>
-                <p>Philippines</p>
-                <p className="mt-2">Phone: +63 123 456 7890</p>
-                <p>Email: info@centralaurora.com</p>
-              </address>
+              <h3 className="text-lg font-semibold mb-4">
+                Contact Information
+              </h3>
+              <p className="text-sm">123 Hospitality Avenue, Global City</p>
+              <p className="text-sm">Phone: (123) 456-7890</p>
+              <p className="text-sm">Email: info@accomoinspect.com</p>
             </div>
           </div>
-          <div className="border-t border-gray-200 mt-8 pt-8 text-center">
-            <p className="text-sm text-gray-600">
-              &copy; 2024 Central Aurora Explorer. All rights reserved.
+          <div className="mt-8 pt-8 border-t border-gray-700 text-center">
+            <p className="text-sm">
+              &copy; {new Date().getFullYear()} C.A.T.M.S. All rights reserved.
             </p>
           </div>
         </div>
       </footer>
-
-      {modalOpen && selectedHotel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full">
-            <button
-              onClick={closeHotelDetails}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-            >
-              &times;
-            </button>
-            <h2 className="text-2xl font-bold mb-2">{selectedHotel.name}</h2>
-            <p className="text-gray-600 mb-4">{selectedHotel.location}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <img
-                  src={selectedHotel.image}
-                  alt={selectedHotel.name}
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-                <div className="mt-4">
-                  <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-sm text-gray-600">
-                    {selectedHotel.description}
-                  </p>
-                </div>
-                <div className="mt-4">
-                  <h4 className="font-semibold mb-2">Amenities</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedHotel.amenities.map((amenity) => {
-                      const amenityOption = amenitiesOptions.find(
-                        (a) => a.value === amenity
-                      );
-                      if (amenityOption) {
-                        return (
-                          <span
-                            key={amenity}
-                            className="bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-0.5 rounded flex items-center"
-                          >
-                            <amenityOption.icon className="h-3 w-3 mr-1" />
-                            {amenityOption.label}
-                          </span>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-4">
-                      Hotel Details
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center">
-                        <Clock className="h-5 w-5 mr-2 text-teal-600" />
-                        <span>
-                          Check-in: {selectedHotel.checkIn} | Check-out:{" "}
-                          {selectedHotel.checkOut}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <Phone className="h-5 w-5 mr-2 text-teal-600" />
-                        <span>{selectedHotel.contact.phone}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Mail className="h-5 w-5 mr-2 text-teal-600" />
-                        <span>{selectedHotel.contact.email}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Globe className="h-5 w-5 mr-2 text-teal-600" />
-                        <a
-                          href={selectedHotel.contact.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-teal-600 hover:underline"
-                        >
-                          Visit Website
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
