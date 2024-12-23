@@ -58,7 +58,6 @@ export async function signIn(email, password) {
 
     return currentAccount;
   } catch (error) {
-    console.error("Sign in error:", error);
     throw new Error(error.message || "Error during login. Please try again.");
   }
 }

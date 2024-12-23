@@ -85,7 +85,6 @@ export default function BalerPage() {
           return;
         }
 
-        // Strict validation for Baler inspector
         if (
           currentUser.role !== "inspector" ||
           currentUser.municipality !== "Baler"
@@ -93,7 +92,6 @@ export default function BalerPage() {
           setIsAuthorized(false);
           setAuthChecked(true);
 
-          // Show unauthorized message and redirect after delay
           setTimeout(() => {
             if (currentUser.role === "inspector") {
               switch (currentUser.municipality) {
@@ -128,7 +126,6 @@ export default function BalerPage() {
         setIsAuthorized(true);
         setAuthChecked(true);
       } catch (error) {
-        console.error("Access check error:", error);
         toast.error("Authentication error");
         router.push("/login");
       }
@@ -225,7 +222,6 @@ export default function BalerPage() {
 
       toast.success("Appointment successfully set!");
     } catch (error) {
-      console.error("Error setting appointment:", error);
       toast.error("Failed to set appointment. Please try again.");
     }
   };
@@ -245,7 +241,6 @@ export default function BalerPage() {
       );
       console.log(`Status updated in database for establishment ${id}`);
     } catch (error) {
-      console.error("Error updating status in database:", error);
       toast.error("Failed to update status in database. Please try again.");
     }
   };
@@ -266,7 +261,6 @@ export default function BalerPage() {
       );
       toast.success(`Establishment status updated to ${status}.`);
     } catch (error) {
-      console.error("Error updating approval status:", error);
       toast.error("Failed to update status. Please try again.");
     }
   };
