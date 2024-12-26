@@ -5,22 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  GalleryVerticalEnd,
-  LockIcon,
-  MailIcon,
-  UserIcon,
-  Loader2,
-} from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LockIcon, MailIcon, UserIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createUser, getCurrentUser, signIn } from "@/services/appwrite";
 import { useAuthUserStore } from "@/services/user";
 import toast, { Toaster } from "react-hot-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 function ResizableImage() {
-  const [size, setSize] = useState({ width: 120, height: 120 }); // Even smaller initial size
-
   return (
     <motion.div
       className="flex flex-col items-center justify-center gap-4"
@@ -29,11 +23,7 @@ function ResizableImage() {
       transition={{ duration: 0.5 }}
     >
       <motion.div
-        className="relative"
-        style={{
-          width: `${size.width}px`,
-          height: `${size.height}px`,
-        }}
+        className="relative w-32 h-32"
         whileHover={{ scale: 1.05 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
@@ -50,7 +40,9 @@ function ResizableImage() {
         transition={{ delay: 0.3, duration: 0.5 }}
       >
         <h2 className="text-2xl font-bold text-[#00838f]">Aurora Tourism</h2>
-        <p className="text-sm text-[#00acc1]">Discover the beauty of Aurora</p>
+        <p className="text-sm text-[#00acc1]">
+          Accommodation Inspection Portal
+        </p>
       </motion.div>
     </motion.div>
   );
@@ -172,19 +164,6 @@ export default function LoginPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex justify-center gap-2 md:justify-start">
-          <motion.a
-            href="/"
-            className="flex items-center gap-2 font-medium text-[#00838f] hover:text-[#00acc1] transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#00acc1] text-white">
-              <GalleryVerticalEnd className="size-5" />
-            </div>
-            Aurora Tourism
-          </motion.a>
-        </div>
         <Toaster />
         <div className="flex flex-1 items-center justify-center">
           <motion.div
@@ -209,211 +188,258 @@ export default function LoginPage() {
                   Sign Up
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="email"
-                      className="text-[#00838f] font-semibold"
-                    >
-                      Email
-                    </Label>
-                    <div className="relative">
-                      <MailIcon
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
-                        size={20}
-                      />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label
-                        htmlFor="password"
-                        className="text-[#00838f] font-semibold"
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TabsContent value="login">
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="email"
+                          className="text-[#00838f] font-semibold"
+                        >
+                          Email
+                        </Label>
+                        <div className="relative">
+                          <MailIcon
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
+                            size={20}
+                          />
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="Enter your email"
+                            className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label
+                            htmlFor="password"
+                            className="text-[#00838f] font-semibold"
+                          >
+                            Password
+                          </Label>
+                          <Link
+                            href="/forgot-password"
+                            className="text-sm text-[#00acc1] hover:underline transition-all duration-300"
+                          >
+                            Forgot password?
+                          </Link>
+                        </div>
+                        <div className="relative">
+                          <LockIcon
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
+                            size={20}
+                          />
+                          <Input
+                            id="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="remember" />
+                        <label
+                          htmlFor="remember"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Remember me
+                        </label>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1] transform hover:scale-105"
+                        disabled={isLoading}
                       >
-                        Password
-                      </Label>
-                      <a
-                        href="#"
-                        className="text-sm text-[#00acc1] hover:underline transition-all duration-300"
+                        {isLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        {isLoading ? "Signing In..." : "Sign In"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                  <TabsContent value="signup">
+                    <form onSubmit={handleSignUp} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="name"
+                          className="text-[#00838f] font-semibold"
+                        >
+                          Full Name
+                        </Label>
+                        <div className="relative">
+                          <UserIcon
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
+                            size={20}
+                          />
+                          <Input
+                            id="name"
+                            placeholder="Enter your full name"
+                            className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="signup-email"
+                          className="text-[#00838f] font-semibold"
+                        >
+                          Email
+                        </Label>
+                        <div className="relative">
+                          <MailIcon
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
+                            size={20}
+                          />
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            placeholder="Enter your email"
+                            className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="signup-password"
+                          className="text-[#00838f] font-semibold"
+                        >
+                          Create Password
+                        </Label>
+                        <div className="relative">
+                          <LockIcon
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
+                            size={20}
+                          />
+                          <Input
+                            id="signup-password"
+                            type="password"
+                            placeholder="Create your password"
+                            className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="confirm-password"
+                          className="text-[#00838f] font-semibold"
+                        >
+                          Confirm Password
+                        </Label>
+                        <div className="relative">
+                          <LockIcon
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
+                            size={20}
+                          />
+                          <Input
+                            id="confirm-password"
+                            type="password"
+                            placeholder="Confirm your password"
+                            className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1] transform hover:scale-105"
+                        disabled={isLoading}
                       >
-                        Forgot password?
-                      </a>
-                    </div>
-                    <div className="relative">
-                      <LockIcon
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
-                        size={20}
-                      />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1] transform hover:scale-105"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    {isLoading ? "Signing In..." : "Sign In"}
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="name"
-                      className="text-[#00838f] font-semibold"
-                    >
-                      Full Name
-                    </Label>
-                    <div className="relative">
-                      <UserIcon
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
-                        size={20}
-                      />
-                      <Input
-                        id="name"
-                        placeholder="Enter your full name"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="signup-email"
-                      className="text-[#00838f] font-semibold"
-                    >
-                      Email
-                    </Label>
-                    <div className="relative">
-                      <MailIcon
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
-                        size={20}
-                      />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="signup-password"
-                      className="text-[#00838f] font-semibold"
-                    >
-                      Create Password
-                    </Label>
-                    <div className="relative">
-                      <LockIcon
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
-                        size={20}
-                      />
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="Create your password"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="confirm-password"
-                      className="text-[#00838f] font-semibold"
-                    >
-                      Confirm Password
-                    </Label>
-                    <div className="relative">
-                      <LockIcon
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00acc1]"
-                        size={20}
-                      />
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        placeholder="Confirm your password"
-                        className="pl-10 rounded-full border-[#4dd0e1] focus:border-[#00acc1] focus:ring-[#00acc1] transition-all duration-300"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full rounded-full bg-gradient-to-r from-[#00acc1] to-[#00bcd4] py-2 text-white transition-all duration-300 hover:from-[#00bcd4] hover:to-[#00acc1] transform hover:scale-105"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    {isLoading ? "Signing Up..." : "Sign Up"}
-                  </Button>
-                </form>
-              </TabsContent>
+                        {isLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        {isLoading ? "Signing Up..." : "Sign Up"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </motion.div>
+              </AnimatePresence>
             </Tabs>
             <div className="text-center text-sm text-[#00838f]">
               By continuing, you agree to Aurora Tourism's{" "}
-              <a href="#" className="text-[#00acc1] hover:underline">
+              <Link
+                href="/terms-of-service"
+                className="text-[#00acc1] hover:underline"
+              >
                 Terms of Service
-              </a>{" "}
+              </Link>{" "}
               and{" "}
-              <a href="#" className="text-[#00acc1] hover:underline">
+              <Link href="/privacy" className="text-[#00acc1] hover:underline">
                 Privacy Policy
-              </a>
+              </Link>
               .
             </div>
           </motion.div>
         </div>
       </motion.div>
-      <motion.div
-        className="relative hidden lg:block bg-cover bg-center"
-        style={{
-          backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
-        }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 1 }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#e0f7fa]/80 to-transparent" />
-        <div className="absolute bottom-10 left-10 text-white">
-          <h2 className="text-4xl font-bold mb-4">Explore Aurora</h2>
-          <p className="text-xl">
-            Discover the natural wonders and rich culture of Aurora Province
-          </p>
-        </div>
-      </motion.div>
+      <div className="hidden lg:flex flex-col justify-center items-start p-12 bg-gradient-to-r from-[#e0f7fa] to-[#b2ebf2]">
+        <motion.h2
+          className="text-4xl font-bold mb-4 text-black"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.5 }}
+        >
+          Accommodation Inspection Process
+        </motion.h2>
+        <motion.p
+          className="text-xl mb-6 max-w-md text-black"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.9, duration: 0.5 }}
+        >
+          Ensuring quality and safety standards for all accommodations in Aurora
+          Province
+        </motion.p>
+        <motion.ul
+          className="list-disc list-inside space-y-2 mb-8 text-black"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1.1, duration: 0.5 }}
+        >
+          <li>Comprehensive safety and hygiene checks</li>
+          <li>Evaluation of facilities and amenities</li>
+          <li>Verification of licenses and permits</li>
+          <li>Assessment of customer service standards</li>
+        </motion.ul>
+        <Link href="/" passHref>
+          <motion.button
+            className="bg-[#00acc1] text-white px-6 py-2 rounded-full font-semibold hover:bg-[#0097a7] transition-colors duration-300"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.3, duration: 0.5 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Learn More About Inspections
+          </motion.button>
+        </Link>
+      </div>
     </div>
   );
 }

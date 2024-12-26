@@ -382,19 +382,12 @@ export async function updateApprovalStatus(accommodationId, status) {
 // Activity Logs
 export async function fetchActivityLogs() {
   try {
-    const currentUser = await getCurrentUser();
-    if (currentUser.role !== "admin") {
-      throw new Error("Unauthorized: Only admins can fetch activity logs.");
-    }
-
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.logsCollectionId,
-      [
-        Query.orderDesc("timestamp"),
-        Query.limit(100), // Adjust this number as needed
-      ]
+      [Query.orderDesc("timestamp"), Query.limit(100)]
     );
+
     return result.documents.map((log) => ({
       id: log.$id,
       timestamp: log.timestamp,
@@ -404,6 +397,7 @@ export async function fetchActivityLogs() {
       details: log.details,
     }));
   } catch (error) {
+    console.error("Error fetching logs:", error);
     throw new Error(error.message || "Failed to fetch activity logs");
   }
 }

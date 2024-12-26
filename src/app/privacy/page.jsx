@@ -71,7 +71,7 @@ export default function PrivacyPolicy() {
               <div className="flex space-x-4">
                 <Button
                   variant="outline"
-                  className="text-gray-500 border-orange-400 hover:bg-indigo-600"
+                  className="text-gray-500 border-orange-400 hover:bg-orange-400"
                   onClick={() => window.print()}
                 >
                   <Printer className="mr-2 h-4 w-4" /> Print
@@ -79,7 +79,7 @@ export default function PrivacyPolicy() {
                 <Link href="/">
                   <Button
                     variant="outline"
-                    className="text-gray-500 border-orange-400 hover:bg-indigo-600"
+                    className="text-gray-500 border-orange-400 hover:bg-orange-400"
                   >
                     Back to Home
                   </Button>

@@ -41,7 +41,7 @@ import { Switch } from "@/components/ui/switch";
 import Overview from "./Overview";
 import Establishments from "./Establishments";
 import UsersPage from "./users";
-import ActivityLog from "./AcivityLog";
+import ActivityLogs from "./AcivityLog";
 
 const queryClient = new QueryClient();
 
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
       case "users":
         return <UsersPage />;
       case "activity":
-        return <ActivityLog />;
+        return <ActivityLogs />;
       default:
         return (
           <Overview

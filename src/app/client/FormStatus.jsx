@@ -43,7 +43,6 @@ const FormStatus = () => {
         setAccommodationDetails(accommodationResponse);
         setFormStatuses(formStatusesResponse);
       } catch (err) {
-        console.error("Error fetching data:", err);
         setError("Failed to fetch data");
       } finally {
         setLoading(false);
@@ -82,7 +81,6 @@ const FormStatus = () => {
       );
       return response.documents;
     } catch (error) {
-      console.error("Error fetching form statuses:", error);
       setError("Failed to fetch form statuses");
       return [];
     }
@@ -246,7 +244,7 @@ const FormStatus = () => {
         transition={{ duration: 0.5 }}
         className="text-3xl font-bold text-indigo-700 mb-6"
       >
-        Your Accommodation Form Statuses
+        Your Accommodation Form Status
       </motion.h2>
       <motion.div
         initial={{ opacity: 0, y: 20 }}

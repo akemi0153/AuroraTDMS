@@ -223,7 +223,7 @@ export default function CATMS() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <Image
-                  src="/placeholder.svg?height=400&width=600"
+                  src="/image/BB.png"
                   alt="Accommodation Inspection"
                   width={600}
                   height={400}

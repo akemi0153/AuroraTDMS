@@ -76,7 +76,6 @@ const Dashboard = () => {
         setIsAuthorized(true);
         setAuthChecked(true);
       } catch (error) {
-        console.error("Access check error:", error);
         toast.error("Authentication error");
         router.push("/login");
       }
@@ -124,7 +123,6 @@ const Dashboard = () => {
       toast.success("Logged out successfully");
       router.push("/login");
     } catch (error) {
-      console.error("Logout error:", error);
       toast.error("Failed to logout properly");
       router.push("/login");
     }
@@ -208,7 +206,7 @@ const Dashboard = () => {
             Welcome, {user?.name || "Guest"}!
           </h2>
           <p className="text-gray-600">
-            View your accommodation form statuses and appointment dates below.
+            View your accommodation form status and appointment dates below.
           </p>
         </motion.div>
         {renderContent()}
