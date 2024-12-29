@@ -401,13 +401,15 @@ export default function CATMS() {
               quality management.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="bg-amber-400 text-indigo-900 hover:bg-amber-300"
-              >
-                Request Demo
-              </Button>
+              <Link href="/demo-form">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="bg-amber-400 text-indigo-900 hover:bg-amber-300"
+                >
+                  Request Demo
+                </Button>
+              </Link>
             </div>
           </div>
         </section>

@@ -234,15 +234,13 @@ export default function DipaculaoPage() {
   };
 
   const handleSetAppointment = (establishment) => {
-    if (establishment.status === "ApprovedAttachment") {
+    if (establishment.appointmentDate) {
       toast.error(
         "An appointment has already been set for this establishment."
       );
-    } else if (establishment.status === "approved") {
+    } else {
       setSelectedEstablishment(establishment);
       setAppointmentModalOpen(true);
-    } else {
-      toast.error("You can only set appointments for approved establishments.");
     }
   };
 
@@ -264,8 +262,8 @@ export default function DipaculaoPage() {
         "6741d7f2000200706b21",
         selectedEstablishment.$id,
         {
-          status: "approved",
           appointmentDate: formattedDate,
+          status: "pending", // Reset status to pending when appointment is set
         }
       );
 
@@ -274,8 +272,8 @@ export default function DipaculaoPage() {
           acc.$id === selectedEstablishment.$id
             ? {
                 ...acc,
-                status: "ApprovedAttachment",
                 appointmentDate: formattedDate,
+                status: "pending",
               }
             : acc
         )
@@ -310,33 +308,33 @@ export default function DipaculaoPage() {
     }
   };
 
-  const handleApprovalStatus = async (id, status) => {
+  const handleApprovalStatus = async (id, newStatus) => {
     try {
       const establishment = accommodations.find((acc) => acc.$id === id);
 
-      if (establishment.status === "ApprovedAttachment") {
-        toast.error(
-          "Cannot change status of an establishment with a set appointment."
-        );
+      if (!establishment.appointmentDate) {
+        toast.error("An appointment must be set before changing the status.");
         return;
       }
 
-      if (status === "declined") {
+      if (establishment.status !== "pending") {
+        toast.error("Status can only be changed for pending establishments.");
+        return;
+      }
+
+      if (newStatus === "declined") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
       }
 
-      if (establishment.status === "approved") {
-        toast.error("Cannot change status of an approved form.");
-        return;
-      }
-
-      await updateStatusInDatabase(id, status);
+      await updateStatusInDatabase(id, newStatus);
       setAccommodations(
-        accommodations.map((acc) => (acc.$id === id ? { ...acc, status } : acc))
+        accommodations.map((acc) =>
+          acc.$id === id ? { ...acc, status: newStatus } : acc
+        )
       );
-      toast.success(`Establishment status updated to ${status}.`);
+      toast.success(`Establishment status updated to ${newStatus}.`);
     } catch (error) {
       toast.error("Failed to update status. Please try again.");
     }
@@ -384,8 +382,6 @@ export default function DipaculaoPage() {
         return "bg-green-100 text-green-800 border border-green-300";
       case "declined":
         return "bg-red-100 text-red-800 border border-red-300";
-      case "ApprovedAttachment":
-        return "bg-blue-100 text-blue-800 border border-blue-300";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-300";
     }
@@ -399,8 +395,6 @@ export default function DipaculaoPage() {
         return <CheckCircle className="h-5 w-5" />;
       case "declined":
         return <XCircle className="h-5 w-5" />;
-      case "ApprovedAttachment":
-        return <FileCheck className="h-5 w-5" />;
       default:
         return null;
     }
@@ -646,6 +640,11 @@ export default function DipaculaoPage() {
                                     "approved"
                                   )
                                 }
+                                disabled={
+                                  !accommodation.appointmentDate ||
+                                  accommodation.status === "approved" ||
+                                  accommodation.status === "declined"
+                                }
                               >
                                 Approve
                               </DropdownMenuItem>
@@ -655,6 +654,11 @@ export default function DipaculaoPage() {
                                     accommodation.$id,
                                     "declined"
                                   )
+                                }
+                                disabled={
+                                  !accommodation.appointmentDate ||
+                                  accommodation.status === "approved" ||
+                                  accommodation.status === "declined"
                                 }
                               >
                                 Decline
@@ -670,11 +674,52 @@ export default function DipaculaoPage() {
                               onClick={() =>
                                 handleSetAppointment(accommodation)
                               }
-                              disabled={accommodation.status !== "approved"}
+                              disabled={
+                                accommodation.appointmentDate !== undefined
+                              }
                               className="text-teal-600 border-teal-600 hover:bg-teal-50"
                             >
-                              Set Appointment
+                              {accommodation.appointmentDate
+                                ? "Appointment Set"
+                                : "Set Appointment"}
                             </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={
+                                    !accommodation.appointmentDate ||
+                                    accommodation.status !== "pending"
+                                  }
+                                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                >
+                                  Change Status
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleApprovalStatus(
+                                      accommodation.$id,
+                                      "approved"
+                                    )
+                                  }
+                                >
+                                  Approve
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleApprovalStatus(
+                                      accommodation.$id,
+                                      "declined"
+                                    )
+                                  }
+                                >
+                                  Decline
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button
                               variant="outline"
                               size="sm"

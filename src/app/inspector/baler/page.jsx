@@ -20,6 +20,14 @@ import {
   CheckCircle,
   XCircle,
   FileCheck,
+  Users,
+  FileCheck2,
+  AlertCircle,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  BarChart3,
+  PieChart,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -66,63 +74,23 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-
-const StackedAreaChart = ({ title, data, dataKeys, colors }) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer
-          config={{
-            ...dataKeys.reduce(
-              (acc, key, index) => ({
-                ...acc,
-                [key]: {
-                  label: key,
-                  color: colors[index],
-                },
-              }),
-              {}
-            ),
-          }}
-          className="h-[200px]"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              {dataKeys.map((key, index) => (
-                <Area
-                  key={key}
-                  type="monotone"
-                  dataKey={key}
-                  stackId="1"
-                  stroke={colors[index]}
-                  fill={colors[index]}
-                />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  );
-};
+import SettingsPage from "./settings";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function BalerPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -141,27 +109,41 @@ export default function BalerPage() {
   const [declineReason, setDeclineReason] = useState("");
   const [isDeclineModalOpen, setDeclineModalOpen] = useState(false);
   const [establishmentToDecline, setEstablishmentToDecline] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [declinedCount, setDeclinedCount] = useState(0);
+  const [analyticsData, setAnalyticsData] = useState({
+    total: { count: 0, change: 0, trend: [] },
+    pending: { count: 0, change: 0, trend: [] },
+    approved: { count: 0, change: 0, trend: [] },
+    declined: { count: 0, change: 0, trend: [] },
+  });
 
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
+        const user = await getCurrentUser();
+        if (!user) {
           toast.error("Please log in first");
           router.push("/login");
           return;
         }
 
-        if (
-          currentUser.role !== "inspector" ||
-          currentUser.municipality !== "Baler"
-        ) {
+        setCurrentUser({
+          name: user.name,
+          role: user.role,
+          municipality: user.municipality,
+        });
+
+        if (user.role !== "inspector" || user.municipality !== "Baler") {
           setIsAuthorized(false);
           setAuthChecked(true);
 
           setTimeout(() => {
-            if (currentUser.role === "inspector") {
-              switch (currentUser.municipality) {
+            if (user.role === "inspector") {
+              switch (user.municipality) {
                 case "San Luis":
                   router.push("/inspector/sanluis");
                   break;
@@ -175,7 +157,7 @@ export default function BalerPage() {
                   router.push("/login");
               }
             } else {
-              switch (currentUser.role) {
+              switch (user.role) {
                 case "admin":
                   router.push("/admin");
                   break;
@@ -209,6 +191,15 @@ export default function BalerPage() {
       try {
         const data = await fetchSpecificAccommodations("Baler");
         setAccommodations(data);
+
+        // Calculate counts for each status
+        const pending = data.filter((acc) => acc.status === "pending").length;
+        const approved = data.filter((acc) => acc.status === "approved").length;
+        const declined = data.filter((acc) => acc.status === "declined").length;
+
+        setPendingCount(pending);
+        setApprovedCount(approved);
+        setDeclinedCount(declined);
       } catch (err) {
         setError("Failed to fetch accommodations");
         toast.error("Error fetching data");
@@ -219,6 +210,40 @@ export default function BalerPage() {
 
     loadAccommodations();
   }, []);
+
+  useEffect(() => {
+    // Simulating fetching analytics data
+    const generateAnalyticsData = () => {
+      const generateTrend = () => {
+        return Array.from({ length: 7 }, () => Math.floor(Math.random() * 100));
+      };
+
+      setAnalyticsData({
+        total: {
+          count: accommodations.length,
+          change: 20,
+          trend: generateTrend(),
+        },
+        pending: {
+          count: pendingCount,
+          change: 5,
+          trend: generateTrend(),
+        },
+        approved: {
+          count: approvedCount,
+          change: 10,
+          trend: generateTrend(),
+        },
+        declined: {
+          count: declinedCount,
+          change: -2,
+          trend: generateTrend(),
+        },
+      });
+    };
+
+    generateAnalyticsData();
+  }, [accommodations.length, pendingCount, approvedCount, declinedCount]);
 
   const filteredAccommodations = accommodations.filter((acc) =>
     acc.establishmentName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -236,15 +261,18 @@ export default function BalerPage() {
   };
 
   const handleSetAppointment = (establishment) => {
-    if (establishment.status === "ApprovedAttachment") {
+    if (establishment.appointmentDate) {
       toast.error(
         "An appointment has already been set for this establishment."
       );
-    } else if (establishment.status === "approved") {
+    } else if (
+      establishment.status !== "approved" &&
+      establishment.status !== "declined"
+    ) {
       setSelectedEstablishment(establishment);
       setAppointmentModalOpen(true);
     } else {
-      toast.error("You can only set appointments for approved establishments.");
+      toast.error("You can only set appointments for pending establishments.");
     }
   };
 
@@ -266,7 +294,6 @@ export default function BalerPage() {
         "6741d7f2000200706b21",
         selectedEstablishment.$id,
         {
-          status: "approved",
           appointmentDate: formattedDate,
         }
       );
@@ -276,7 +303,6 @@ export default function BalerPage() {
           acc.$id === selectedEstablishment.$id
             ? {
                 ...acc,
-                status: "ApprovedAttachment",
                 appointmentDate: formattedDate,
               }
             : acc
@@ -312,33 +338,38 @@ export default function BalerPage() {
     }
   };
 
-  const handleApprovalStatus = async (id, status) => {
+  const handleApprovalStatus = async (id, newStatus) => {
     try {
       const establishment = accommodations.find((acc) => acc.$id === id);
 
-      if (establishment.status === "ApprovedAttachment") {
+      if (!establishment.appointmentDate) {
+        toast.error("An appointment must be set before changing the status.");
+        return;
+      }
+
+      if (
+        establishment.status === "approved" ||
+        establishment.status === "declined"
+      ) {
         toast.error(
-          "Cannot change status of an establishment with a set appointment."
+          `Cannot change status of an establishment that is already ${establishment.status}.`
         );
         return;
       }
 
-      if (status === "declined") {
+      if (newStatus === "declined") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
       }
 
-      if (establishment.status === "approved") {
-        toast.error("Cannot change status of an approved form.");
-        return;
-      }
-
-      await updateStatusInDatabase(id, status);
+      await updateStatusInDatabase(id, newStatus);
       setAccommodations(
-        accommodations.map((acc) => (acc.$id === id ? { ...acc, status } : acc))
+        accommodations.map((acc) =>
+          acc.$id === id ? { ...acc, status: newStatus } : acc
+        )
       );
-      toast.success(`Establishment status updated to ${status}.`);
+      toast.success(`Establishment status updated to ${newStatus}.`);
     } catch (error) {
       toast.error("Failed to update status. Please try again.");
     }
@@ -386,8 +417,6 @@ export default function BalerPage() {
         return "bg-green-100 text-green-800 border border-green-300";
       case "declined":
         return "bg-red-100 text-red-800 border border-red-300";
-      case "ApprovedAttachment":
-        return "bg-blue-100 text-blue-800 border border-blue-300";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-300";
     }
@@ -401,8 +430,6 @@ export default function BalerPage() {
         return <CheckCircle className="h-5 w-5" />;
       case "declined":
         return <XCircle className="h-5 w-5" />;
-      case "ApprovedAttachment":
-        return <FileCheck className="h-5 w-5" />;
       default:
         return null;
     }
@@ -419,6 +446,60 @@ export default function BalerPage() {
     animate: { x: 0, opacity: 1 },
     transition: { duration: 0.5 },
   };
+
+  const renderSparkline = (data, color) => (
+    <ResponsiveContainer width="100%" height={40}>
+      <LineChart data={data.map((value, index) => ({ value, index }))}>
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke={color}
+          strokeWidth={1.5}
+          dot={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+
+  const renderCardContent = (title, icon, data, color, sparklineColor) => (
+    <Card
+      className={`bg-gradient-to-br from-${color}-500 to-${color}-600 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
+    >
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {React.cloneElement(icon, { className: "h-4 w-4" })}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{data.count}</div>
+        <div className="flex items-center text-xs mt-1">
+          {data.change > 0 ? (
+            <ArrowUpRight className="mr-1 h-3 w-3 text-green-300" />
+          ) : (
+            <ArrowDownRight className="mr-1 h-3 w-3 text-red-300" />
+          )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={
+                    data.change > 0 ? "text-green-300" : "text-red-300"
+                  }
+                >
+                  {Math.abs(data.change)}% from last period
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Compared to the previous month</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <div className="h-10 mt-2">
+          {renderSparkline(data.trend, sparklineColor)}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (!authChecked) {
     return (
@@ -481,26 +562,22 @@ export default function BalerPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                pathname === "/" ? "bg-indigo-100 text-indigo-700" : ""
+                !showSettings ? "bg-indigo-100 text-indigo-700" : ""
               }`}
-              asChild
+              onClick={() => setShowSettings(false)}
             >
-              <Link href="/">
-                <Building2 className="mr-2 h-5 w-5" />
-                Dashboard
-              </Link>
+              <Building2 className="mr-2 h-5 w-5" />
+              Dashboard
             </Button>
             <Button
               variant="ghost"
               className={`justify-start ${
-                pathname === "/settings" ? "bg-indigo-100 text-indigo-700" : ""
+                showSettings ? "bg-indigo-100 text-indigo-700" : ""
               }`}
-              asChild
+              onClick={() => setShowSettings(true)}
             >
-              <Link href="/settings">
-                <Settings className="mr-2 h-5 w-5" />
-                Settings
-              </Link>
+              <Settings className="mr-2 h-5 w-5" />
+              Settings
             </Button>
             <Button
               variant="ghost"
@@ -546,160 +623,224 @@ export default function BalerPage() {
             </Button>
           </div>
         </motion.header>
-        <div className="container mx-auto p-6">
-          <motion.h1
-            className="mb-6 text-3xl font-bold text-indigo-800"
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-          >
-            Baler Overview
-          </motion.h1>
+        {!showSettings && currentUser && (
           <motion.div
-            className="grid gap-6 md:grid-cols-1 lg:grid-cols-1"
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
+            className="bg-white shadow-md rounded-lg p-6 m-4"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <motion.div
-              variants={slideIn}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">
-                    Total Establishments
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {accommodations.length}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
-          <motion.div
-            className="mt-8"
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-          >
-            <h2 className="text-2xl font-semibold mb-4 text-indigo-700">
-              Establishments
+            <h2 className="text-2xl font-semibold">
+              Welcome, Inspector {currentUser.name}
             </h2>
-            <Card className="overflow-hidden">
-              {loading ? (
-                <div className="flex h-32 items-center justify-center">
-                  <p>Loading data...</p>
-                </div>
-              ) : error ? (
-                <div className="flex h-32 items-center justify-center">
-                  <p>{error}</p>
-                </div>
-              ) : filteredAccommodations.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-indigo-50">
-                      <TableHead className="font-semibold text-indigo-900">
-                        Establishment Name
-                      </TableHead>
-                      <TableHead className="font-semibold text-indigo-900">
-                        Municipality
-                      </TableHead>
-                      <TableHead className="font-semibold text-indigo-900">
-                        Status
-                      </TableHead>
-                      <TableHead className="font-semibold text-indigo-900">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAccommodations.map((accommodation) => (
-                      <TableRow
-                        key={accommodation.$id}
-                        className="hover:bg-gray-50"
-                      >
-                        <TableCell className="font-medium">
-                          {accommodation.establishmentName}
-                        </TableCell>
-                        <TableCell>{accommodation.municipality}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Badge
-                                className={`cursor-pointer ${getStatusColor(
-                                  accommodation.status
-                                )} px-2 py-1 text-xs font-semibold rounded-full`}
-                              >
-                                {getStatusIcon(accommodation.status)}
-                                <span className="ml-2">
-                                  {accommodation.status}
-                                </span>
-                              </Badge>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleApprovalStatus(
-                                    accommodation.$id,
-                                    "approved"
-                                  )
-                                }
-                              >
-                                Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleApprovalStatus(
-                                    accommodation.$id,
-                                    "declined"
-                                  )
-                                }
-                              >
-                                Decline
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleSetAppointment(accommodation)
-                              }
-                              disabled={accommodation.status !== "approved"}
-                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                            >
-                              Set Appointment
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleViewEstablishment(accommodation)
-                              }
-                              className="text-green-600 border-green-600 hover:bg-green-50"
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="flex h-32 items-center justify-center">
-                  <p>No establishments found.</p>
-                </div>
-              )}
-            </Card>
           </motion.div>
+        )}
+        <div className="container mx-auto p-6">
+          {showSettings ? (
+            <SettingsPage />
+          ) : (
+            <>
+              <motion.h1
+                className="mb-6 text-3xl font-bold text-indigo-800"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                Baler Overview
+              </motion.h1>
+              <motion.div
+                className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Total Establishments",
+                    <Users className="h-8 w-8 text-indigo-100" />,
+                    analyticsData.total,
+                    "indigo",
+                    "#8884d8"
+                  )}
+                </motion.div>
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Pending Review",
+                    <AlertCircle className="h-8 w-8 text-yellow-100" />,
+                    analyticsData.pending,
+                    "yellow",
+                    "#ffd700"
+                  )}
+                </motion.div>
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Approved Establishments",
+                    <FileCheck2 className="h-8 w-8 text-green-100" />,
+                    analyticsData.approved,
+                    "green",
+                    "#4ade80"
+                  )}
+                </motion.div>
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Declined Establishments",
+                    <XCircle className="h-8 w-8 text-red-100" />,
+                    analyticsData.declined,
+                    "red",
+                    "#f87171"
+                  )}
+                </motion.div>
+              </motion.div>
+              <motion.div
+                className="mt-8"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                <h2 className="text-2xl font-semibold mb-4 text-indigo-700">
+                  Establishments
+                </h2>
+                <Card className="overflow-hidden">
+                  {loading ? (
+                    <div className="flex h-32 items-center justify-center">
+                      <p>Loading data...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="flex h-32 items-center justify-center">
+                      <p>{error}</p>
+                    </div>
+                  ) : filteredAccommodations.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-indigo-50">
+                          <TableHead className="font-semibold text-indigo-900">
+                            Establishment Name
+                          </TableHead>
+                          <TableHead className="font-semibold text-indigo-900">
+                            Municipality
+                          </TableHead>
+                          <TableHead className="font-semibold text-indigo-900">
+                            Status
+                          </TableHead>
+                          <TableHead className="font-semibold text-indigo-900">
+                            Actions
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAccommodations.map((accommodation) => (
+                          <TableRow
+                            key={accommodation.$id}
+                            className="hover:bg-gray-50"
+                          >
+                            <TableCell className="font-medium">
+                              {accommodation.establishmentName}
+                            </TableCell>
+                            <TableCell>{accommodation.municipality}</TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Badge
+                                    className={`cursor-pointer ${getStatusColor(
+                                      accommodation.status
+                                    )} px-2 py-1 text-xs font-semibold rounded-full`}
+                                  >
+                                    {getStatusIcon(accommodation.status)}
+                                    <span className="ml-2">
+                                      {accommodation.status}
+                                    </span>
+                                  </Badge>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleApprovalStatus(
+                                        accommodation.$id,
+                                        "approved"
+                                      )
+                                    }
+                                    disabled={
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
+                                    }
+                                  >
+                                    Approve
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleApprovalStatus(
+                                        accommodation.$id,
+                                        "declined"
+                                      )
+                                    }
+                                    disabled={
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
+                                    }
+                                  >
+                                    Decline
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleSetAppointment(accommodation)
+                                  }
+                                  disabled={
+                                    accommodation.appointmentDate !== undefined
+                                  }
+                                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                >
+                                  {accommodation.appointmentDate
+                                    ? "Appointment Set"
+                                    : "Set Appointment"}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleViewEstablishment(accommodation)
+                                  }
+                                  className="text-green-600 border-green-600 hover:bg-green-50"
+                                >
+                                  View Details
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="flex h-32 items-center justify-center">
+                      <p>No establishments found.</p>
+                    </div>
+                  )}
+                </Card>
+              </motion.div>
+            </>
+          )}
         </div>
       </main>
       <Sheet
