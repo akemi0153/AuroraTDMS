@@ -125,6 +125,79 @@ export default function CATMS() {
       answer:
         "We provide comprehensive onboarding and training for all users, including inspectors, management, and staff. Our support team is available 24/7 to assist with any questions or issues. We also offer regular webinars and updates on best practices in accommodation inspection and quality management.",
     },
+    {
+      question:
+        "How does C.A.T.M.S address the unique needs of Central Aurora's tourism industry?",
+      answer: (
+        <div className="space-y-4 text-justify">
+          <p>
+            C.A.T.M.S is specifically designed to meet the unique requirements
+            of Central Aurora's diverse tourism landscape. It incorporates both
+            DOT (Department of Tourism) Standard Regulations and Local Standard
+            Regulations:
+          </p>
+          <ol className="list-decimal pl-5 space-y-2">
+            <li>
+              <span className="font-semibold">DOT Compliance:</span> The system
+              ensures all accommodations adhere to the latest DOT standards,
+              including the National Accommodation Standards for Hotels,
+              Resorts, and Apartment Hotels. It covers crucial areas such as
+              guest rooms, public areas, food and beverage outlets, kitchen and
+              food production areas, and guest services.
+            </li>
+            <li>
+              <span className="font-semibold">Local Regulations:</span>{" "}
+              C.A.T.M.S integrates Central Aurora's specific local ordinances
+              and regulations, such as environmental protection measures for
+              coastal properties and cultural preservation guidelines for
+              heritage sites.
+            </li>
+            <li>
+              <span className="font-semibold">Customized Checklists:</span> The
+              system offers tailored inspection checklists for various
+              accommodation types found in Central Aurora, from beach resorts to
+              mountain lodges, ensuring relevant criteria for each property
+              type.
+            </li>
+            <li>
+              <span className="font-semibold">Multilingual Support:</span>{" "}
+              Recognizing the diverse linguistic landscape of Central Aurora,
+              C.A.T.M.S supports multiple languages commonly spoken in the
+              region, facilitating clear communication between inspectors,
+              staff, and management.
+            </li>
+            <li>
+              <span className="font-semibold">Seasonal Adaptability:</span> The
+              system accounts for Central Aurora's seasonal tourism patterns,
+              allowing for adjusted inspection schedules and criteria during
+              peak and off-peak seasons.
+            </li>
+            <li>
+              <span className="font-semibold">Local Collaboration:</span>{" "}
+              C.A.T.M.S facilitates seamless cooperation between local
+              government units, property owners, and the Provincial Tourism
+              Office, ensuring a unified approach to maintaining and improving
+              accommodation standards across Central Aurora.
+            </li>
+            <li>
+              <span className="font-semibold">
+                Sustainable Tourism Practices:
+              </span>{" "}
+              In line with both DOT and local initiatives, the system
+              incorporates sustainability metrics, helping properties in Central
+              Aurora to implement and track eco-friendly practices.
+            </li>
+          </ol>
+          <p>
+            By addressing these specific needs, C.A.T.M.S not only ensures
+            regulatory compliance but also contributes to the overall
+            improvement of Central Aurora's tourism industry, enhancing guest
+            experiences and supporting the region's reputation as a top-tier
+            destination.
+          </p>
+        </div>
+      ),
+    },
   ];
 
   const [expandedFAQ, setExpandedFAQ] = useState(null);
@@ -380,36 +453,13 @@ export default function CATMS() {
                           transition={{ duration: 0.3 }}
                           className="px-4 pb-4"
                         >
-                          <p className="text-gray-600">{item.answer}</p>
+                          <div className="text-gray-600">{item.answer}</div>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-indigo-800 text-white py-20">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">
-              Ready to Elevate Your Accommodation Inspections?
-            </h2>
-            <p className="text-xl mb-8">
-              Join C.A.T.M.S today and experience the future of hospitality
-              quality management.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/demo-form">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="bg-amber-400 text-indigo-900 hover:bg-amber-300"
-                >
-                  Request Demo
-                </Button>
-              </Link>
             </div>
           </div>
         </section>

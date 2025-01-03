@@ -1,26 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Calendar,
-  Building2,
-  Search,
-  Bell,
-  Settings,
-  LogOut,
-  Clock,
-  CheckCircle,
-  XCircle,
-  FileCheck,
-} from "lucide-react";
+import { Calendar, Building2, Search, Bell, Settings, LogOut, Clock, CheckCircle, XCircle, FileCheck, Users, FileCheck2, AlertCircle, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -52,12 +40,6 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -66,61 +48,18 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-
-const StackedAreaChart = ({ title, data, dataKeys, colors }) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer
-          config={dataKeys.reduce(
-            (acc, key, index) => ({
-              ...acc,
-              [key]: {
-                label: key,
-                color: colors[index],
-              },
-            }),
-            {}
-          )}
-          className="h-[200px]"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              {dataKeys.map((key, index) => (
-                <Area
-                  key={key}
-                  type="monotone"
-                  dataKey={key}
-                  stackId="1"
-                  stroke={colors[index]}
-                  fill={colors[index]}
-                />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  );
-};
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import SettingsPage from "./settings";
 
 export default function DipaculaoPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -133,12 +72,15 @@ export default function DipaculaoPage() {
   const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [viewEstablishment, setViewEstablishment] = useState(null);
   const router = useRouter();
-  const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
-  const [declineReason, setDeclineReason] = useState("");
-  const [isDeclineModalOpen, setDeclineModalOpen] = useState(false);
-  const [establishmentToDecline, setEstablishmentToDecline] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState({
+    total: { count: 0, change: 0, trend: [] },
+    pending: { count: 0, change: 0, trend: [] },
+    approved: { count: 0, change: 0, trend: [] },
+    declined: { count: 0, change: 0, trend: [] },
+  });
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -207,6 +149,35 @@ export default function DipaculaoPage() {
       try {
         const data = await fetchSpecificAccommodations("Dipaculao");
         setAccommodations(data);
+        
+        // Calculate counts for each status
+        const pending = data.filter((acc) => acc.status === "pending").length;
+        const approved = data.filter((acc) => acc.status === "approved").length;
+        const declined = data.filter((acc) => acc.status === "declined").length;
+
+        // Update analytics data
+        setAnalyticsData({
+          total: {
+            count: data.length,
+            change: 20,
+            trend: generateTrend(),
+          },
+          pending: {
+            count: pending,
+            change: 5,
+            trend: generateTrend(),
+          },
+          approved: {
+            count: approved,
+            change: 10,
+            trend: generateTrend(),
+          },
+          declined: {
+            count: declined,
+            change: -2,
+            trend: generateTrend(),
+          },
+        });
       } catch (err) {
         setError("Failed to fetch accommodations");
         toast.error("Error fetching data");
@@ -217,6 +188,10 @@ export default function DipaculaoPage() {
 
     loadAccommodations();
   }, []);
+
+  const generateTrend = () => {
+    return Array.from({ length: 7 }, () => Math.floor(Math.random() * 100));
+  };
 
   const filteredAccommodations = accommodations.filter((acc) =>
     acc.establishmentName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -263,7 +238,7 @@ export default function DipaculaoPage() {
         selectedEstablishment.$id,
         {
           appointmentDate: formattedDate,
-          status: "pending", // Reset status to pending when appointment is set
+          status: "pending",
         }
       );
 
@@ -292,86 +267,6 @@ export default function DipaculaoPage() {
   const handleViewEstablishment = (establishment) => {
     setViewEstablishment(establishment);
     setViewModalOpen(true);
-  };
-
-  const updateStatusInDatabase = async (id, status) => {
-    try {
-      await databases.updateDocument(
-        "672cfccb002f456cb332",
-        "6741d7f2000200706b21",
-        id,
-        { status: status }
-      );
-      console.log(`Status updated in database for establishment ${id}`);
-    } catch (error) {
-      toast.error("Failed to update status in database. Please try again.");
-    }
-  };
-
-  const handleApprovalStatus = async (id, newStatus) => {
-    try {
-      const establishment = accommodations.find((acc) => acc.$id === id);
-
-      if (!establishment.appointmentDate) {
-        toast.error("An appointment must be set before changing the status.");
-        return;
-      }
-
-      if (establishment.status !== "pending") {
-        toast.error("Status can only be changed for pending establishments.");
-        return;
-      }
-
-      if (newStatus === "declined") {
-        setEstablishmentToDecline({ id, currentStatus: establishment.status });
-        setDeclineModalOpen(true);
-        return;
-      }
-
-      await updateStatusInDatabase(id, newStatus);
-      setAccommodations(
-        accommodations.map((acc) =>
-          acc.$id === id ? { ...acc, status: newStatus } : acc
-        )
-      );
-      toast.success(`Establishment status updated to ${newStatus}.`);
-    } catch (error) {
-      toast.error("Failed to update status. Please try again.");
-    }
-  };
-
-  const handleDeclineSubmit = async () => {
-    if (!declineReason.trim()) {
-      toast.error("Please provide a reason for declining");
-      return;
-    }
-
-    try {
-      await databases.updateDocument(
-        "672cfccb002f456cb332",
-        "6741d7f2000200706b21",
-        establishmentToDecline.id,
-        {
-          status: "declined",
-          declineReason: declineReason,
-        }
-      );
-
-      setAccommodations(
-        accommodations.map((acc) =>
-          acc.$id === establishmentToDecline.id
-            ? { ...acc, status: "declined", declineReason }
-            : acc
-        )
-      );
-
-      setDeclineModalOpen(false);
-      setDeclineReason("");
-      setEstablishmentToDecline(null);
-      toast.success("Establishment declined successfully");
-    } catch (error) {
-      toast.error("Failed to decline establishment");
-    }
   };
 
   const getStatusColor = (status) => {
@@ -411,6 +306,60 @@ export default function DipaculaoPage() {
     animate: { x: 0, opacity: 1 },
     transition: { duration: 0.5 },
   };
+
+  const renderSparkline = (data, color) => (
+    <ResponsiveContainer width="100%" height={40}>
+      <LineChart data={data.map((value, index) => ({ value, index }))}>
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke={color}
+          strokeWidth={1.5}
+          dot={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+
+  const renderCardContent = (title, icon, data, color, sparklineColor) => (
+    <Card
+      className={`bg-gradient-to-br from-${color}-500 to-${color}-600 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
+    >
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {React.cloneElement(icon, { className: "h-4 w-4" })}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{data.count}</div>
+        <div className="flex items-center text-xs mt-1">
+          {data.change > 0 ? (
+            <ArrowUpRight className="mr-1 h-3 w-3 text-green-300" />
+          ) : (
+            <ArrowDownRight className="mr-1 h-3 w-3 text-red-300" />
+          )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={
+                    data.change > 0 ? "text-green-300" : "text-red-300"
+                  }
+                >
+                  {Math.abs(data.change)}% from last period
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Compared to the previous month</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <div className="h-10 mt-2">
+          {renderSparkline(data.trend, sparklineColor)}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (!authChecked) {
     return (
@@ -473,26 +422,22 @@ export default function DipaculaoPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                pathname === "/" ? "bg-teal-100 text-teal-700" : ""
+                !showSettings ? "bg-teal-100 text-teal-700" : ""
               }`}
-              asChild
+              onClick={() => setShowSettings(false)}
             >
-              <Link href="/">
-                <Building2 className="mr-2 h-5 w-5" />
-                Dashboard
-              </Link>
+              <Building2 className="mr-2 h-5 w-5" />
+              Dashboard
             </Button>
             <Button
               variant="ghost"
               className={`justify-start ${
-                pathname === "/settings" ? "bg-teal-100 text-teal-700" : ""
+                showSettings ? "bg-teal-100 text-teal-700" : ""
               }`}
-              asChild
+              onClick={() => setShowSettings(true)}
             >
-              <Link href="/settings">
-                <Settings className="mr-2 h-5 w-5" />
-                Settings
-              </Link>
+              <Settings className="mr-2 h-5 w-5" />
+              Settings
             </Button>
             <Button
               variant="ghost"
@@ -539,90 +484,126 @@ export default function DipaculaoPage() {
           </div>
         </motion.header>
         <div className="container mx-auto p-6">
-          <motion.h1
-            className="mb-6 text-3xl font-bold text-teal-800"
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-          >
-            Dipaculao Overview
-          </motion.h1>
-          <motion.div
-            className="grid gap-6 md:grid-cols-1 lg:grid-cols-1"
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-          >
-            <motion.div
-              variants={slideIn}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="bg-gradient-to-br from-teal-500 to-green-600 text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">
-                    Total Establishments
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {accommodations.length}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
-          <motion.div
-            className="mt-8"
-            variants={fadeIn}
-            initial="initial"
-            animate="animate"
-          >
-            <h2 className="text-2xl font-semibold mb-4 text-teal-700">
-              Establishments
-            </h2>
-            <Card className="overflow-hidden">
-              {loading ? (
-                <div className="flex h-32 items-center justify-center">
-                  <p>Loading data...</p>
-                </div>
-              ) : error ? (
-                <div className="flex h-32 items-center justify-center">
-                  <p>{error}</p>
-                </div>
-              ) : filteredAccommodations.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-teal-50">
-                      <TableHead className="font-semibold text-teal-900">
-                        Establishment Name
-                      </TableHead>
-                      <TableHead className="font-semibold text-teal-900">
-                        Municipality
-                      </TableHead>
-                      <TableHead className="font-semibold text-teal-900">
-                        Status
-                      </TableHead>
-                      <TableHead className="font-semibold text-teal-900">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAccommodations.map((accommodation) => (
-                      <TableRow
-                        key={accommodation.$id}
-                        className="hover:bg-gray-50"
-                      >
-                        <TableCell className="font-medium">
-                          {accommodation.establishmentName}
-                        </TableCell>
-                        <TableCell>{accommodation.municipality}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+          {showSettings ? (
+            <SettingsPage />
+          ) : (
+            <>
+              <motion.h1
+                className="mb-6 text-3xl font-bold text-teal-800"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                Dipaculao Overview
+              </motion.h1>
+              <motion.div
+                className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Total Establishments",
+                    <Users className="h-8 w-8 text-teal-100" />,
+                    analyticsData.total,
+                    "teal",
+                    "#4fd1c5"
+                  )}
+                </motion.div>
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Pending Review",
+                    <AlertCircle className="h-8 w-8 text-yellow-100" />,
+                    analyticsData.pending,
+                    "yellow",
+                    "#ffd700"
+                  )}
+                </motion.div>
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Approved Establishments",
+                    <FileCheck2 className="h-8 w-8 text-green-100" />,
+                    analyticsData.approved,
+                    "green",
+                    "#48bb78"
+                  )}
+                </motion.div>
+                <motion.div
+                  variants={slideIn}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCardContent(
+                    "Declined Establishments",
+                    <XCircle className="h-8 w-8 text-red-100" />,
+                    analyticsData.declined,
+                    "red",
+                    "#f56565"
+                  )}
+                </motion.div>
+              </motion.div>
+              <motion.div
+                className="mt-8"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                <h2 className="text-2xl font-semibold mb-4 text-teal-700">
+                  Establishments
+                </h2>
+                <Card className="overflow-hidden">
+                  {loading ? (
+                    <div className="flex h-32 items-center justify-center">
+                      <p>Loading data...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="flex h-32 items-center justify-center">
+                      <p>{error}</p>
+                    </div>
+                  ) : filteredAccommodations.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-teal-50">
+                          <TableHead className="font-semibold text-teal-900">
+                            Establishment Name
+                          </TableHead>
+                          <TableHead className="font-semibold text-teal-900">
+                            Municipality
+                          </TableHead>
+                          <TableHead className="font-semibold text-teal-900">
+                            Status
+                          </TableHead>
+                          <TableHead className="font-semibold text-teal-900">
+                            Actions
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAccommodations.map((accommodation) => (
+                          <TableRow
+                            key={accommodation.$id}
+                            className="hover:bg-gray-50"
+                          >
+                            <TableCell className="font-medium">
+                              {accommodation.establishmentName}
+                            </TableCell>
+                            <TableCell>{accommodation.municipality}</TableCell>
+                            <TableCell>
                               <Badge
-                                className={`cursor-pointer ${getStatusColor(
+                                className={`${getStatusColor(
                                   accommodation.status
                                 )} px-2 py-1 text-xs font-semibold rounded-full`}
                               >
@@ -631,118 +612,49 @@ export default function DipaculaoPage() {
                                   {accommodation.status}
                                 </span>
                               </Badge>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleApprovalStatus(
-                                    accommodation.$id,
-                                    "approved"
-                                  )
-                                }
-                                disabled={
-                                  !accommodation.appointmentDate ||
-                                  accommodation.status === "approved" ||
-                                  accommodation.status === "declined"
-                                }
-                              >
-                                Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleApprovalStatus(
-                                    accommodation.$id,
-                                    "declined"
-                                  )
-                                }
-                                disabled={
-                                  !accommodation.appointmentDate ||
-                                  accommodation.status === "approved" ||
-                                  accommodation.status === "declined"
-                                }
-                              >
-                                Decline
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleSetAppointment(accommodation)
-                              }
-                              disabled={
-                                accommodation.appointmentDate !== undefined
-                              }
-                              className="text-teal-600 border-teal-600 hover:bg-teal-50"
-                            >
-                              {accommodation.appointmentDate
-                                ? "Appointment Set"
-                                : "Set Appointment"}
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() =>
+                                    handleSetAppointment(accommodation)
+                                  }
                                   disabled={
-                                    !accommodation.appointmentDate ||
-                                    accommodation.status !== "pending"
+                                    accommodation.appointmentDate !== undefined
                                   }
-                                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                  className="text-teal-600 border-teal-600 hover:bg-teal-50"
                                 >
-                                  Change Status
+                                  {accommodation.appointmentDate
+                                    ? "Appointment Set"
+                                    : "Set Appointment"}
                                 </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                <DropdownMenuItem
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() =>
-                                    handleApprovalStatus(
-                                      accommodation.$id,
-                                      "approved"
-                                    )
+                                    handleViewEstablishment(accommodation)
                                   }
+                                  className="text-green-600 border-green-600 hover:bg-green-50"
                                 >
-                                  Approve
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    handleApprovalStatus(
-                                      accommodation.$id,
-                                      "declined"
-                                    )
-                                  }
-                                >
-                                  Decline
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleViewEstablishment(accommodation)
-                              }
-                              className="text-green-600 border-green-600 hover:bg-green-50"
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="flex h-32 items-center justify-center">
-                  <p>No establishments found.</p>
-                </div>
-              )}
-            </Card>
-          </motion.div>
+                                  View Details
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="flex h-32 items-center justify-center">
+                      <p>No establishments found.</p>
+                    </div>
+                  )}
+                </Card>
+              </motion.div>
+            </>
+          )}
         </div>
       </main>
       <Sheet
@@ -858,44 +770,8 @@ export default function DipaculaoPage() {
           </Tabs>
         </DialogContent>
       </Dialog>
-      <Dialog open={isDeclineModalOpen} onOpenChange={setDeclineModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Decline Establishment</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for declining this establishment
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4 space-y-4">
-            <div className="grid gap-4">
-              <label htmlFor="declineReason" className="text-sm font-medium">
-                Reason for Declining
-              </label>
-              <textarea
-                id="declineReason"
-                className="min-h-[100px] w-full rounded-md border p-3"
-                placeholder="Enter reason..."
-                value={declineReason}
-                onChange={(e) => setDeclineReason(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDeclineModalOpen(false);
-                  setDeclineReason("");
-                  setEstablishmentToDecline(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleDeclineSubmit}>Submit</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
       <ToastContainer />
     </div>
   );
 }
+

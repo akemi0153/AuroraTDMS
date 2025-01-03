@@ -62,7 +62,6 @@ export async function signIn(email, password) {
 }
 
 // Get Current User Document
-
 export async function getCurrentUser() {
   try {
     // Fetch the current account
@@ -285,6 +284,7 @@ export const checkDuplicateAccommodation = async (
     return false;
   }
 };
+
 export async function fetchAccommodations() {
   try {
     const result = await databases.listDocuments(
@@ -382,22 +382,26 @@ export async function updateApprovalStatus(accommodationId, status) {
 // Activity Logs
 export async function fetchActivityLogs() {
   try {
-    const result = await databases.listDocuments(
+    const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.logsCollectionId,
       [Query.orderDesc("timestamp"), Query.limit(100)]
     );
 
-    return result.documents.map((log) => ({
+    if (!response || !response.documents) {
+      throw new Error("No documents found in the response");
+    }
+
+    return response.documents.map((log) => ({
       id: log.$id,
       timestamp: log.timestamp,
       eventType: log.eventType,
       message: log.message,
       userId: log.userId,
+      municipality: log.municipality,
       details: log.details,
     }));
   } catch (error) {
-    console.error("Error fetching logs:", error);
-    throw new Error(error.message || "Failed to fetch activity logs");
+    throw new Error(`Failed to fetch activity logs: ${error.message}`);
   }
 }
