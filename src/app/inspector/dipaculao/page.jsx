@@ -8,7 +8,24 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Building2, Search, Bell, Settings, LogOut, Clock, CheckCircle, XCircle, FileCheck, Users, FileCheck2, AlertCircle, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import {
+  Calendar,
+  Building2,
+  Search,
+  Bell,
+  Settings,
+  LogOut,
+  Clock,
+  CheckCircle,
+  XCircle,
+  FileCheck,
+  Users,
+  FileCheck2,
+  AlertCircle,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -40,6 +57,12 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -74,7 +97,11 @@ export default function DipaculaoPage() {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [isDeclineModalOpen, setDeclineModalOpen] = useState(false);
+  const [establishmentToDecline, setEstablishmentToDecline] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [analyticsData, setAnalyticsData] = useState({
     total: { count: 0, change: 0, trend: [] },
     pending: { count: 0, change: 0, trend: [] },
@@ -85,23 +112,26 @@ export default function DipaculaoPage() {
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
+        const user = await getCurrentUser();
+        if (!user) {
           toast.error("Please log in first");
           router.push("/login");
           return;
         }
 
-        if (
-          currentUser.role !== "inspector" ||
-          currentUser.municipality !== "Dipaculao"
-        ) {
+        setCurrentUser({
+          name: user.name,
+          role: user.role,
+          municipality: user.municipality,
+        });
+
+        if (user.role !== "inspector" || user.municipality !== "Dipaculao") {
           setIsAuthorized(false);
           setAuthChecked(true);
 
           setTimeout(() => {
-            if (currentUser.role === "inspector") {
-              switch (currentUser.municipality) {
+            if (user.role === "inspector") {
+              switch (user.municipality) {
                 case "Baler":
                   router.push("/inspector/baler");
                   break;
@@ -115,7 +145,7 @@ export default function DipaculaoPage() {
                   router.push("/login");
               }
             } else {
-              switch (currentUser.role) {
+              switch (user.role) {
                 case "admin":
                   router.push("/admin");
                   break;
@@ -149,7 +179,7 @@ export default function DipaculaoPage() {
       try {
         const data = await fetchSpecificAccommodations("Dipaculao");
         setAccommodations(data);
-        
+
         // Calculate counts for each status
         const pending = data.filter((acc) => acc.status === "pending").length;
         const approved = data.filter((acc) => acc.status === "approved").length;
@@ -238,7 +268,6 @@ export default function DipaculaoPage() {
         selectedEstablishment.$id,
         {
           appointmentDate: formattedDate,
-          status: "pending",
         }
       );
 
@@ -248,7 +277,6 @@ export default function DipaculaoPage() {
             ? {
                 ...acc,
                 appointmentDate: formattedDate,
-                status: "pending",
               }
             : acc
         )
@@ -267,6 +295,91 @@ export default function DipaculaoPage() {
   const handleViewEstablishment = (establishment) => {
     setViewEstablishment(establishment);
     setViewModalOpen(true);
+  };
+
+  const updateStatusInDatabase = async (id, status) => {
+    try {
+      await databases.updateDocument(
+        "672cfccb002f456cb332",
+        "6741d7f2000200706b21",
+        id,
+        { status: status }
+      );
+      console.log(`Status updated in database for establishment ${id}`);
+    } catch (error) {
+      toast.error("Failed to update status in database. Please try again.");
+    }
+  };
+
+  const handleApprovalStatus = async (id, newStatus) => {
+    try {
+      const establishment = accommodations.find((acc) => acc.$id === id);
+
+      if (!establishment.appointmentDate) {
+        toast.error("An appointment must be set before changing the status.");
+        return;
+      }
+
+      if (
+        establishment.status === "approved" ||
+        establishment.status === "declined"
+      ) {
+        toast.error(
+          `Cannot change status of an establishment that is already ${establishment.status}.`
+        );
+        return;
+      }
+
+      if (newStatus === "declined") {
+        setEstablishmentToDecline({ id, currentStatus: establishment.status });
+        setDeclineModalOpen(true);
+        return;
+      }
+
+      await updateStatusInDatabase(id, newStatus);
+      setAccommodations(
+        accommodations.map((acc) =>
+          acc.$id === id ? { ...acc, status: newStatus } : acc
+        )
+      );
+      toast.success(`Establishment status updated to ${newStatus}.`);
+    } catch (error) {
+      toast.error("Failed to update status. Please try again.");
+    }
+  };
+
+  const handleDeclineSubmit = async () => {
+    if (!declineReason.trim()) {
+      toast.error("Please provide a reason for declining");
+      return;
+    }
+
+    try {
+      await databases.updateDocument(
+        "672cfccb002f456cb332",
+        "6741d7f2000200706b21",
+        establishmentToDecline.id,
+        {
+          status: "declined",
+          declineReason: declineReason,
+        }
+      );
+
+      setAccommodations(
+        accommodations.map((acc) =>
+          acc.$id === establishmentToDecline.id
+            ? { ...acc, status: "declined", declineReason }
+            : acc
+        )
+      );
+
+      setDeclineModalOpen(false);
+      setDeclineReason("");
+      setEstablishmentToDecline(null);
+      toast.success("Establishment declined successfully");
+    } catch (error) {
+      toast.error("Failed to decline establishment");
+    }
   };
 
   const getStatusColor = (status) => {
@@ -422,7 +535,7 @@ export default function DipaculaoPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                !showSettings ? "bg-teal-100 text-teal-700" : ""
+                !showSettings ? "bg-green-100 text-teal-700" : ""
               }`}
               onClick={() => setShowSettings(false)}
             >
@@ -432,7 +545,7 @@ export default function DipaculaoPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                showSettings ? "bg-teal-100 text-teal-700" : ""
+                showSettings ? "bg-green-100 text-teal-700" : ""
               }`}
               onClick={() => setShowSettings(true)}
             >
@@ -497,6 +610,15 @@ export default function DipaculaoPage() {
                 Dipaculao Overview
               </motion.h1>
               <motion.div
+                className="mb-6 text-lg text-teal-600"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                Welcome, {currentUser?.name || "Inspector"}! You are logged in
+                as an inspector for Dipaculao.
+              </motion.div>
+              <motion.div
                 className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
                 variants={fadeIn}
                 initial="initial"
@@ -512,7 +634,7 @@ export default function DipaculaoPage() {
                     <Users className="h-8 w-8 text-teal-100" />,
                     analyticsData.total,
                     "teal",
-                    "#4fd1c5"
+                    "#9f7aea"
                   )}
                 </motion.div>
                 <motion.div
@@ -576,7 +698,7 @@ export default function DipaculaoPage() {
                   ) : filteredAccommodations.length > 0 ? (
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-teal-50">
+                        <TableRow className="bg-green-50">
                           <TableHead className="font-semibold text-teal-900">
                             Establishment Name
                           </TableHead>
@@ -602,16 +724,52 @@ export default function DipaculaoPage() {
                             </TableCell>
                             <TableCell>{accommodation.municipality}</TableCell>
                             <TableCell>
-                              <Badge
-                                className={`${getStatusColor(
-                                  accommodation.status
-                                )} px-2 py-1 text-xs font-semibold rounded-full`}
-                              >
-                                {getStatusIcon(accommodation.status)}
-                                <span className="ml-2">
-                                  {accommodation.status}
-                                </span>
-                              </Badge>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Badge
+                                    className={`cursor-pointer ${getStatusColor(
+                                      accommodation.status
+                                    )} px-2 py-1 text-xs font-semibold rounded-full`}
+                                  >
+                                    {getStatusIcon(accommodation.status)}
+                                    <span className="ml-2">
+                                      {accommodation.status}
+                                    </span>
+                                  </Badge>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleApprovalStatus(
+                                        accommodation.$id,
+                                        "approved"
+                                      )
+                                    }
+                                    disabled={
+                                      !accommodation.appointmentDate ||
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
+                                    }
+                                  >
+                                    Approve
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleApprovalStatus(
+                                        accommodation.$id,
+                                        "declined"
+                                      )
+                                    }
+                                    disabled={
+                                      !accommodation.appointmentDate ||
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
+                                    }
+                                  >
+                                    Decline
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
@@ -620,9 +778,6 @@ export default function DipaculaoPage() {
                                   size="sm"
                                   onClick={() =>
                                     handleSetAppointment(accommodation)
-                                  }
-                                  disabled={
-                                    accommodation.appointmentDate !== undefined
                                   }
                                   className="text-teal-600 border-teal-600 hover:bg-teal-50"
                                 >
@@ -636,7 +791,7 @@ export default function DipaculaoPage() {
                                   onClick={() =>
                                     handleViewEstablishment(accommodation)
                                   }
-                                  className="text-green-600 border-green-600 hover:bg-green-50"
+                                  className="text-pink-600 border-pink-600 hover:bg-pink-50"
                                 >
                                   View Details
                                 </Button>
@@ -770,8 +925,44 @@ export default function DipaculaoPage() {
           </Tabs>
         </DialogContent>
       </Dialog>
+      <Dialog open={isDeclineModalOpen} onOpenChange={setDeclineModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Decline Establishment</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for declining this establishment
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-4">
+              <label htmlFor="declineReason" className="text-sm font-medium">
+                Reason for Declining
+              </label>
+              <textarea
+                id="declineReason"
+                className="min-h-[100px] w-full rounded-md border p-3"
+                placeholder="Enter reason..."
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDeclineModalOpen(false);
+                  setDeclineReason("");
+                  setEstablishmentToDecline(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleDeclineSubmit}>Submit</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <ToastContainer />
     </div>
   );
 }
-

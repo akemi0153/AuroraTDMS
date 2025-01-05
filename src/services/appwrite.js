@@ -12,7 +12,7 @@ export const appwriteConfig = {
   facilitiesCollectionId: "6741e31a0022f8e43fb3",
   roomsCollectionId: "67432e7e00241eb80e40",
   servicesCollectionId: "6743c72d003a2d3b298d",
-  logsCollectionId: "6766ffac001f897801e9", // Added logs collection ID
+  logsCollectionId: "6766ffac001f897801e9",
 };
 
 if (!appwriteConfig.endpoint || !appwriteConfig.projectId) {
@@ -379,29 +379,84 @@ export async function updateApprovalStatus(accommodationId, status) {
   }
 }
 
-// Activity Logs
+// Updated fetchActivityLogs function
 export async function fetchActivityLogs() {
   try {
-    const response = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      appwriteConfig.logsCollectionId,
-      [Query.orderDesc("timestamp"), Query.limit(100)]
-    );
+    const currentUser = await getCurrentUser();
 
-    if (!response || !response.documents) {
-      throw new Error("No documents found in the response");
+    if (!currentUser) {
+      throw new Error("User not authenticated");
     }
 
-    return response.documents.map((log) => ({
+    // Verify admin role
+    if (currentUser.role !== "admin") {
+      throw new Error("Unauthorized access. Admin privileges required.");
+    }
+
+    // Fetch logs from accommodations collection
+    const accommodationsResponse = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.accommodationsCollectionId,
+      [Query.orderDesc("$createdAt"), Query.limit(100)]
+    );
+
+    // Fetch logs from users collection
+    const usersResponse = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      [Query.orderDesc("$createdAt"), Query.limit(100)]
+    );
+
+    // Combine and map the results
+    const combinedLogs = [
+      ...accommodationsResponse.documents,
+      ...usersResponse.documents,
+    ].map((log) => ({
       id: log.$id,
-      timestamp: log.timestamp,
-      eventType: log.eventType,
-      message: log.message,
-      userId: log.userId,
-      municipality: log.municipality,
-      details: log.details,
+      municipality: log.municipality || "N/A",
+      appointmentDate: log.appointmentDate || "N/A",
+      declineReason: log.declineReason || "N/A",
+      status: log.status || "N/A",
+      userId: log.userId || "N/A",
+      name: log.name || "N/A",
+      role: log.role || "N/A",
     }));
+
+    return combinedLogs;
   } catch (error) {
-    throw new Error(`Failed to fetch activity logs: ${error.message}`);
+    throw new Error(error.message || "Failed to fetch activity logs");
+  }
+}
+
+export async function createActivityLog(logData) {
+  try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
+    // Only admin
+    if (currentUser.role !== "admin") {
+      throw new Error("Unauthorized to create activity logs");
+    }
+
+    const logEntry = {
+      userId: currentUser.$id,
+      name: currentUser.name,
+      municipality: currentUser.municipality,
+      timestamp: new Date().toISOString(),
+      ...logData,
+    };
+
+    await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.logsCollectionId,
+      ID.unique(),
+      logEntry
+    );
+  } catch (error) {
+    console.error("Error creating activity log:", error);
+    throw new Error("Failed to create activity log");
   }
 }

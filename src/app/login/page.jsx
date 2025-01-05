@@ -8,12 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LockIcon, MailIcon, UserIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  createUser,
-  getCurrentUser,
-  signIn,
-  storeActivityLog,
-} from "@/services/appwrite";
+import { createUser, getCurrentUser, signIn } from "@/services/appwrite";
 import { useAuthUserStore } from "@/services/user";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -132,15 +127,6 @@ export default function LoginPage() {
       sessionStorage.setItem("userRole", user.role);
       if (user.municipality) {
         sessionStorage.setItem("userMunicipality", user.municipality);
-      }
-
-      if (user.role === "inspector") {
-        await storeActivityLog({
-          eventType: "Inspector Sign In",
-          userId: user.$id,
-          municipality: user.municipality,
-          message: `Inspector ${user.name} signed in`,
-        });
       }
 
       await handleRoleRedirect();

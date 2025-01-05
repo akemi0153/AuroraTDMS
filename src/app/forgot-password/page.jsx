@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { account } from "@/services/appwrite";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -19,9 +20,10 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Here you would typically call your password reset API
-      // For this example, we'll just simulate a delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await account.createRecovery(
+        email,
+        "https://your-app-url.com/reset-password"
+      );
       toast.success("Password reset link sent to your email!");
       // Optionally, redirect to login page after successful submission
       // router.push('/login');

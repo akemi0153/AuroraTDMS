@@ -244,15 +244,13 @@ export default function SanLuisPage() {
   };
 
   const handleSetAppointment = (establishment) => {
-    if (establishment.status === "ApprovedAttachment") {
+    if (establishment.appointmentDate) {
       toast.error(
         "An appointment has already been set for this establishment."
       );
-    } else if (establishment.status === "approved") {
+    } else {
       setSelectedEstablishment(establishment);
       setAppointmentModalOpen(true);
-    } else {
-      toast.error("You can only set appointments for approved establishments.");
     }
   };
 
@@ -274,7 +272,6 @@ export default function SanLuisPage() {
         "6741d7f2000200706b21",
         selectedEstablishment.$id,
         {
-          status: "ApprovedAttachment",
           appointmentDate: formattedDate,
         }
       );
@@ -284,7 +281,6 @@ export default function SanLuisPage() {
           acc.$id === selectedEstablishment.$id
             ? {
                 ...acc,
-                status: "ApprovedAttachment",
                 appointmentDate: formattedDate,
               }
             : acc
@@ -320,33 +316,38 @@ export default function SanLuisPage() {
     }
   };
 
-  const handleApprovalStatus = async (id, status) => {
+  const handleApprovalStatus = async (id, newStatus) => {
     try {
       const establishment = accommodations.find((acc) => acc.$id === id);
 
-      if (establishment.status === "ApprovedAttachment") {
+      if (!establishment.appointmentDate) {
+        toast.error("An appointment must be set before changing the status.");
+        return;
+      }
+
+      if (
+        establishment.status === "approved" ||
+        establishment.status === "declined"
+      ) {
         toast.error(
-          "Cannot change status of an establishment with a set appointment."
+          `Cannot change status of an establishment that is already ${establishment.status}.`
         );
         return;
       }
 
-      if (status === "declined") {
+      if (newStatus === "declined") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
       }
 
-      if (establishment.status === "approved") {
-        toast.error("Cannot change status of an approved form.");
-        return;
-      }
-
-      await updateStatusInDatabase(id, status);
+      await updateStatusInDatabase(id, newStatus);
       setAccommodations(
-        accommodations.map((acc) => (acc.$id === id ? { ...acc, status } : acc))
+        accommodations.map((acc) =>
+          acc.$id === id ? { ...acc, status: newStatus } : acc
+        )
       );
-      toast.success(`Establishment status updated to ${status}.`);
+      toast.success(`Establishment status updated to ${newStatus}.`);
     } catch (error) {
       toast.error("Failed to update status. Please try again.");
     }
@@ -394,8 +395,6 @@ export default function SanLuisPage() {
         return "bg-green-100 text-green-800 border border-green-300";
       case "declined":
         return "bg-red-100 text-red-800 border border-red-300";
-      case "ApprovedAttachment":
-        return "bg-blue-100 text-blue-800 border border-blue-300";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-300";
     }
@@ -409,8 +408,6 @@ export default function SanLuisPage() {
         return <CheckCircle className="h-5 w-5" />;
       case "declined":
         return <XCircle className="h-5 w-5" />;
-      case "ApprovedAttachment":
-        return <FileCheck className="h-5 w-5" />;
       default:
         return null;
     }
@@ -526,7 +523,7 @@ export default function SanLuisPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-orange-50 to-yellow-100">
+    <div className="flex h-screen bg-gradient-to-br from-green-50 to-teal-100">
       <motion.aside
         className="fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0"
         initial={{ x: -100, opacity: 0 }}
@@ -534,7 +531,7 @@ export default function SanLuisPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="flex h-16 items-center justify-center border-b">
-          <span className="text-xl font-semibold text-orange-600">
+          <span className="text-xl font-semibold text-teal-600">
             San Luis Dashboard
           </span>
         </div>
@@ -543,7 +540,7 @@ export default function SanLuisPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                !showSettings ? "bg-orange-100 text-orange-700" : ""
+                !showSettings ? "bg-green-100 text-teal-700" : ""
               }`}
               onClick={() => setShowSettings(false)}
             >
@@ -553,7 +550,7 @@ export default function SanLuisPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                showSettings ? "bg-orange-100 text-orange-700" : ""
+                showSettings ? "bg-green-100 text-teal-700" : ""
               }`}
               onClick={() => setShowSettings(true)}
             >
@@ -610,13 +607,22 @@ export default function SanLuisPage() {
           ) : (
             <>
               <motion.h1
-                className="mb-6 text-3xl font-bold text-orange-800"
+                className="mb-6 text-3xl font-bold text-teal-800"
                 variants={fadeIn}
                 initial="initial"
                 animate="animate"
               >
                 San Luis Overview
               </motion.h1>
+              <motion.div
+                className="mb-6 text-lg text-teal-600"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                Welcome, {currentUser?.name || "Inspector"}! You are logged in
+                as an inspector for San Luis.
+              </motion.div>
               <motion.div
                 className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
                 variants={fadeIn}
@@ -630,10 +636,10 @@ export default function SanLuisPage() {
                 >
                   {renderCardContent(
                     "Total Establishments",
-                    <Users className="h-8 w-8 text-orange-100" />,
+                    <Users className="h-8 w-8 text-teal-100" />,
                     analyticsData.total,
-                    "orange",
-                    "#f97316"
+                    "teal",
+                    "#9f7aea"
                   )}
                 </motion.div>
                 <motion.div
@@ -646,7 +652,7 @@ export default function SanLuisPage() {
                     <AlertCircle className="h-8 w-8 text-yellow-100" />,
                     analyticsData.pending,
                     "yellow",
-                    "#fbbf24"
+                    "#ffd700"
                   )}
                 </motion.div>
                 <motion.div
@@ -659,7 +665,7 @@ export default function SanLuisPage() {
                     <FileCheck2 className="h-8 w-8 text-green-100" />,
                     analyticsData.approved,
                     "green",
-                    "#22c55e"
+                    "#48bb78"
                   )}
                 </motion.div>
                 <motion.div
@@ -672,7 +678,7 @@ export default function SanLuisPage() {
                     <XCircle className="h-8 w-8 text-red-100" />,
                     analyticsData.declined,
                     "red",
-                    "#ef4444"
+                    "#f56565"
                   )}
                 </motion.div>
               </motion.div>
@@ -682,7 +688,7 @@ export default function SanLuisPage() {
                 initial="initial"
                 animate="animate"
               >
-                <h2 className="text-2xl font-semibold mb-4 text-orange-700">
+                <h2 className="text-2xl font-semibold mb-4 text-teal-700">
                   Establishments
                 </h2>
                 <Card className="overflow-hidden">
@@ -697,17 +703,17 @@ export default function SanLuisPage() {
                   ) : filteredAccommodations.length > 0 ? (
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-orange-50">
-                          <TableHead className="font-semibold text-orange-900">
+                        <TableRow className="bg-green-50">
+                          <TableHead className="font-semibold text-teal-900">
                             Establishment Name
                           </TableHead>
-                          <TableHead className="font-semibold text-orange-900">
+                          <TableHead className="font-semibold text-teal-900">
                             Municipality
                           </TableHead>
-                          <TableHead className="font-semibold text-orange-900">
+                          <TableHead className="font-semibold text-teal-900">
                             Status
                           </TableHead>
-                          <TableHead className="font-semibold text-orange-900">
+                          <TableHead className="font-semibold text-teal-900">
                             Actions
                           </TableHead>
                         </TableRow>
@@ -744,6 +750,11 @@ export default function SanLuisPage() {
                                         "approved"
                                       )
                                     }
+                                    disabled={
+                                      !accommodation.appointmentDate ||
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
+                                    }
                                   >
                                     Approve
                                   </DropdownMenuItem>
@@ -753,6 +764,11 @@ export default function SanLuisPage() {
                                         accommodation.$id,
                                         "declined"
                                       )
+                                    }
+                                    disabled={
+                                      !accommodation.appointmentDate ||
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
                                     }
                                   >
                                     Decline
@@ -768,10 +784,11 @@ export default function SanLuisPage() {
                                   onClick={() =>
                                     handleSetAppointment(accommodation)
                                   }
-                                  disabled={accommodation.status !== "approved"}
-                                  className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                                  className="text-teal-600 border-purple-600 hover:bg-purple-50"
                                 >
-                                  Set Appointment
+                                  {accommodation.appointmentDate
+                                    ? "Appointment Set"
+                                    : "Set Appointment"}
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -779,7 +796,7 @@ export default function SanLuisPage() {
                                   onClick={() =>
                                     handleViewEstablishment(accommodation)
                                   }
-                                  className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                                  className="text-pink-600 border-pink-600 hover:bg-pink-50"
                                 >
                                   View Details
                                 </Button>

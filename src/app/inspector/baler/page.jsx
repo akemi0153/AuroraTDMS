@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import DatePicker from "react-datepicker";
@@ -26,8 +25,6 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
-  BarChart3,
-  PieChart,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -80,17 +77,12 @@ import {
   Line,
 } from "recharts";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import SettingsPage from "./settings";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import SettingsPage from "./settings";
 
 export default function BalerPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -103,7 +95,6 @@ export default function BalerPage() {
   const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [viewEstablishment, setViewEstablishment] = useState(null);
   const router = useRouter();
-  const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
@@ -111,9 +102,6 @@ export default function BalerPage() {
   const [establishmentToDecline, setEstablishmentToDecline] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [approvedCount, setApprovedCount] = useState(0);
-  const [declinedCount, setDeclinedCount] = useState(0);
   const [analyticsData, setAnalyticsData] = useState({
     total: { count: 0, change: 0, trend: [] },
     pending: { count: 0, change: 0, trend: [] },
@@ -197,9 +185,29 @@ export default function BalerPage() {
         const approved = data.filter((acc) => acc.status === "approved").length;
         const declined = data.filter((acc) => acc.status === "declined").length;
 
-        setPendingCount(pending);
-        setApprovedCount(approved);
-        setDeclinedCount(declined);
+        // Update analytics data
+        setAnalyticsData({
+          total: {
+            count: data.length,
+            change: 20,
+            trend: generateTrend(),
+          },
+          pending: {
+            count: pending,
+            change: 5,
+            trend: generateTrend(),
+          },
+          approved: {
+            count: approved,
+            change: 10,
+            trend: generateTrend(),
+          },
+          declined: {
+            count: declined,
+            change: -2,
+            trend: generateTrend(),
+          },
+        });
       } catch (err) {
         setError("Failed to fetch accommodations");
         toast.error("Error fetching data");
@@ -211,39 +219,9 @@ export default function BalerPage() {
     loadAccommodations();
   }, []);
 
-  useEffect(() => {
-    // Simulating fetching analytics data
-    const generateAnalyticsData = () => {
-      const generateTrend = () => {
-        return Array.from({ length: 7 }, () => Math.floor(Math.random() * 100));
-      };
-
-      setAnalyticsData({
-        total: {
-          count: accommodations.length,
-          change: 20,
-          trend: generateTrend(),
-        },
-        pending: {
-          count: pendingCount,
-          change: 5,
-          trend: generateTrend(),
-        },
-        approved: {
-          count: approvedCount,
-          change: 10,
-          trend: generateTrend(),
-        },
-        declined: {
-          count: declinedCount,
-          change: -2,
-          trend: generateTrend(),
-        },
-      });
-    };
-
-    generateAnalyticsData();
-  }, [accommodations.length, pendingCount, approvedCount, declinedCount]);
+  const generateTrend = () => {
+    return Array.from({ length: 7 }, () => Math.floor(Math.random() * 100));
+  };
 
   const filteredAccommodations = accommodations.filter((acc) =>
     acc.establishmentName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -265,14 +243,9 @@ export default function BalerPage() {
       toast.error(
         "An appointment has already been set for this establishment."
       );
-    } else if (
-      establishment.status !== "approved" &&
-      establishment.status !== "declined"
-    ) {
+    } else {
       setSelectedEstablishment(establishment);
       setAppointmentModalOpen(true);
-    } else {
-      toast.error("You can only set appointments for pending establishments.");
     }
   };
 
@@ -508,7 +481,7 @@ export default function BalerPage() {
           className="text-center text-white"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 2 }}
+          transition={{ duration: 0.5 }}
         >
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-xl font-semibold">Checking authorization...</p>
@@ -545,7 +518,7 @@ export default function BalerPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen bg-gradient-to-br from-purple-50 to-pink-100">
       <motion.aside
         className="fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0"
         initial={{ x: -100, opacity: 0 }}
@@ -553,7 +526,7 @@ export default function BalerPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="flex h-16 items-center justify-center border-b">
-          <span className="text-xl font-semibold text-indigo-600">
+          <span className="text-xl font-semibold text-purple-600">
             Baler Dashboard
           </span>
         </div>
@@ -562,7 +535,7 @@ export default function BalerPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                !showSettings ? "bg-indigo-100 text-indigo-700" : ""
+                !showSettings ? "bg-purple-100 text-purple-700" : ""
               }`}
               onClick={() => setShowSettings(false)}
             >
@@ -572,7 +545,7 @@ export default function BalerPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                showSettings ? "bg-indigo-100 text-indigo-700" : ""
+                showSettings ? "bg-purple-100 text-purple-700" : ""
               }`}
               onClick={() => setShowSettings(true)}
             >
@@ -623,25 +596,13 @@ export default function BalerPage() {
             </Button>
           </div>
         </motion.header>
-        {!showSettings && currentUser && (
-          <motion.div
-            className="bg-white shadow-md rounded-lg p-6 m-4"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-2xl font-semibold">
-              Welcome, Inspector {currentUser.name}
-            </h2>
-          </motion.div>
-        )}
         <div className="container mx-auto p-6">
           {showSettings ? (
             <SettingsPage />
           ) : (
             <>
               <motion.h1
-                className="mb-6 text-3xl font-bold text-indigo-800"
+                className="mb-6 text-3xl font-bold text-purple-800"
                 variants={fadeIn}
                 initial="initial"
                 animate="animate"
@@ -649,7 +610,16 @@ export default function BalerPage() {
                 Baler Overview
               </motion.h1>
               <motion.div
-                className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+                className="mb-6 text-lg text-purple-600"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                Welcome, {currentUser?.name || "Inspector"}! You are logged in
+                as an inspector for Baler.
+              </motion.div>
+              <motion.div
+                className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
                 variants={fadeIn}
                 initial="initial"
                 animate="animate"
@@ -661,10 +631,10 @@ export default function BalerPage() {
                 >
                   {renderCardContent(
                     "Total Establishments",
-                    <Users className="h-8 w-8 text-indigo-100" />,
+                    <Users className="h-8 w-8 text-purple-100" />,
                     analyticsData.total,
-                    "indigo",
-                    "#8884d8"
+                    "purple",
+                    "#9f7aea"
                   )}
                 </motion.div>
                 <motion.div
@@ -690,7 +660,7 @@ export default function BalerPage() {
                     <FileCheck2 className="h-8 w-8 text-green-100" />,
                     analyticsData.approved,
                     "green",
-                    "#4ade80"
+                    "#48bb78"
                   )}
                 </motion.div>
                 <motion.div
@@ -703,7 +673,7 @@ export default function BalerPage() {
                     <XCircle className="h-8 w-8 text-red-100" />,
                     analyticsData.declined,
                     "red",
-                    "#f87171"
+                    "#f56565"
                   )}
                 </motion.div>
               </motion.div>
@@ -713,7 +683,7 @@ export default function BalerPage() {
                 initial="initial"
                 animate="animate"
               >
-                <h2 className="text-2xl font-semibold mb-4 text-indigo-700">
+                <h2 className="text-2xl font-semibold mb-4 text-purple-700">
                   Establishments
                 </h2>
                 <Card className="overflow-hidden">
@@ -728,17 +698,17 @@ export default function BalerPage() {
                   ) : filteredAccommodations.length > 0 ? (
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-indigo-50">
-                          <TableHead className="font-semibold text-indigo-900">
+                        <TableRow className="bg-purple-50">
+                          <TableHead className="font-semibold text-purple-900">
                             Establishment Name
                           </TableHead>
-                          <TableHead className="font-semibold text-indigo-900">
+                          <TableHead className="font-semibold text-purple-900">
                             Municipality
                           </TableHead>
-                          <TableHead className="font-semibold text-indigo-900">
+                          <TableHead className="font-semibold text-purple-900">
                             Status
                           </TableHead>
-                          <TableHead className="font-semibold text-indigo-900">
+                          <TableHead className="font-semibold text-purple-900">
                             Actions
                           </TableHead>
                         </TableRow>
@@ -776,6 +746,7 @@ export default function BalerPage() {
                                       )
                                     }
                                     disabled={
+                                      !accommodation.appointmentDate ||
                                       accommodation.status === "approved" ||
                                       accommodation.status === "declined"
                                     }
@@ -790,6 +761,7 @@ export default function BalerPage() {
                                       )
                                     }
                                     disabled={
+                                      !accommodation.appointmentDate ||
                                       accommodation.status === "approved" ||
                                       accommodation.status === "declined"
                                     }
@@ -807,10 +779,7 @@ export default function BalerPage() {
                                   onClick={() =>
                                     handleSetAppointment(accommodation)
                                   }
-                                  disabled={
-                                    accommodation.appointmentDate !== undefined
-                                  }
-                                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                  className="text-purple-600 border-purple-600 hover:bg-purple-50"
                                 >
                                   {accommodation.appointmentDate
                                     ? "Appointment Set"
@@ -822,7 +791,7 @@ export default function BalerPage() {
                                   onClick={() =>
                                     handleViewEstablishment(accommodation)
                                   }
-                                  className="text-green-600 border-green-600 hover:bg-green-50"
+                                  className="text-pink-600 border-pink-600 hover:bg-pink-50"
                                 >
                                   View Details
                                 </Button>

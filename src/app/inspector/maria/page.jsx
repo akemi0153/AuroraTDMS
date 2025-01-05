@@ -77,11 +77,6 @@ import {
   Line,
 } from "recharts";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
   Tooltip as UITooltip,
   TooltipContent,
   TooltipProvider,
@@ -106,6 +101,7 @@ export default function MariaAuroraPage() {
   const [isDeclineModalOpen, setDeclineModalOpen] = useState(false);
   const [establishmentToDecline, setEstablishmentToDecline] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [analyticsData, setAnalyticsData] = useState({
     total: { count: 0, change: 0, trend: [] },
     pending: { count: 0, change: 0, trend: [] },
@@ -116,23 +112,26 @@ export default function MariaAuroraPage() {
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
+        const user = await getCurrentUser();
+        if (!user) {
           toast.error("Please log in first");
           router.push("/login");
           return;
         }
 
-        if (
-          currentUser.role !== "inspector" ||
-          currentUser.municipality !== "Maria Aurora"
-        ) {
+        setCurrentUser({
+          name: user.name,
+          role: user.role,
+          municipality: user.municipality,
+        });
+
+        if (user.role !== "inspector" || user.municipality !== "Maria Aurora") {
           setIsAuthorized(false);
           setAuthChecked(true);
 
           setTimeout(() => {
-            if (currentUser.role === "inspector") {
-              switch (currentUser.municipality) {
+            if (user.role === "inspector") {
+              switch (user.municipality) {
                 case "Baler":
                   router.push("/inspector/baler");
                   break;
@@ -146,7 +145,7 @@ export default function MariaAuroraPage() {
                   router.push("/login");
               }
             } else {
-              switch (currentUser.role) {
+              switch (user.role) {
                 case "admin":
                   router.push("/admin");
                   break;
@@ -240,15 +239,13 @@ export default function MariaAuroraPage() {
   };
 
   const handleSetAppointment = (establishment) => {
-    if (establishment.status === "ApprovedAttachment") {
+    if (establishment.appointmentDate) {
       toast.error(
         "An appointment has already been set for this establishment."
       );
-    } else if (establishment.status === "approved") {
+    } else {
       setSelectedEstablishment(establishment);
       setAppointmentModalOpen(true);
-    } else {
-      toast.error("You can only set appointments for approved establishments.");
     }
   };
 
@@ -270,7 +267,6 @@ export default function MariaAuroraPage() {
         "6741d7f2000200706b21",
         selectedEstablishment.$id,
         {
-          status: "approved",
           appointmentDate: formattedDate,
         }
       );
@@ -280,7 +276,6 @@ export default function MariaAuroraPage() {
           acc.$id === selectedEstablishment.$id
             ? {
                 ...acc,
-                status: "ApprovedAttachment",
                 appointmentDate: formattedDate,
               }
             : acc
@@ -316,33 +311,38 @@ export default function MariaAuroraPage() {
     }
   };
 
-  const handleApprovalStatus = async (id, status) => {
+  const handleApprovalStatus = async (id, newStatus) => {
     try {
       const establishment = accommodations.find((acc) => acc.$id === id);
 
-      if (establishment.status === "ApprovedAttachment") {
+      if (!establishment.appointmentDate) {
+        toast.error("An appointment must be set before changing the status.");
+        return;
+      }
+
+      if (
+        establishment.status === "approved" ||
+        establishment.status === "declined"
+      ) {
         toast.error(
-          "Cannot change status of an establishment with a set appointment."
+          `Cannot change status of an establishment that is already ${establishment.status}.`
         );
         return;
       }
 
-      if (status === "declined") {
+      if (newStatus === "declined") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
       }
 
-      if (establishment.status === "approved") {
-        toast.error("Cannot change status of an approved form.");
-        return;
-      }
-
-      await updateStatusInDatabase(id, status);
+      await updateStatusInDatabase(id, newStatus);
       setAccommodations(
-        accommodations.map((acc) => (acc.$id === id ? { ...acc, status } : acc))
+        accommodations.map((acc) =>
+          acc.$id === id ? { ...acc, status: newStatus } : acc
+        )
       );
-      toast.success(`Establishment status updated to ${status}.`);
+      toast.success(`Establishment status updated to ${newStatus}.`);
     } catch (error) {
       toast.error("Failed to update status. Please try again.");
     }
@@ -390,8 +390,6 @@ export default function MariaAuroraPage() {
         return "bg-green-100 text-green-800 border border-green-300";
       case "declined":
         return "bg-red-100 text-red-800 border border-red-300";
-      case "ApprovedAttachment":
-        return "bg-blue-100 text-blue-800 border border-blue-300";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-300";
     }
@@ -405,8 +403,6 @@ export default function MariaAuroraPage() {
         return <CheckCircle className="h-5 w-5" />;
       case "declined":
         return <XCircle className="h-5 w-5" />;
-      case "ApprovedAttachment":
-        return <FileCheck className="h-5 w-5" />;
       default:
         return null;
     }
@@ -614,6 +610,15 @@ export default function MariaAuroraPage() {
                 Maria Aurora Overview
               </motion.h1>
               <motion.div
+                className="mb-6 text-lg text-purple-600"
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+              >
+                Welcome, {currentUser?.name || "Inspector"}! You are logged in
+                as an inspector for Maria Aurora.
+              </motion.div>
+              <motion.div
                 className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
                 variants={fadeIn}
                 initial="initial"
@@ -740,6 +745,11 @@ export default function MariaAuroraPage() {
                                         "approved"
                                       )
                                     }
+                                    disabled={
+                                      !accommodation.appointmentDate ||
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
+                                    }
                                   >
                                     Approve
                                   </DropdownMenuItem>
@@ -749,6 +759,11 @@ export default function MariaAuroraPage() {
                                         accommodation.$id,
                                         "declined"
                                       )
+                                    }
+                                    disabled={
+                                      !accommodation.appointmentDate ||
+                                      accommodation.status === "approved" ||
+                                      accommodation.status === "declined"
                                     }
                                   >
                                     Decline
@@ -764,10 +779,11 @@ export default function MariaAuroraPage() {
                                   onClick={() =>
                                     handleSetAppointment(accommodation)
                                   }
-                                  disabled={accommodation.status !== "approved"}
                                   className="text-purple-600 border-purple-600 hover:bg-purple-50"
                                 >
-                                  Set Appointment
+                                  {accommodation.appointmentDate
+                                    ? "Appointment Set"
+                                    : "Set Appointment"}
                                 </Button>
                                 <Button
                                   variant="outline"
