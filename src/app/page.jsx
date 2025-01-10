@@ -27,11 +27,16 @@ import {
 import { X } from "lucide-react";
 
 const images = [
-  "/image/BB.png",
   "/image/bay.png",
   "/image/costa.png",
   "/image/resort.jpg",
-  // Add more image paths as needed
+  "/image/casa.png",
+  "/image/baler.png",
+  "/image/l-sirene-boutique-resort.png",
+  "/image/playa-azul-baler.png",
+  "/image/Riverstone.png",
+  "/image/m.png",
+  "/image/caption.png",
 ];
 
 export default function CATMS() {
@@ -68,37 +73,25 @@ export default function CATMS() {
       icon: ClipboardCheck,
       title: "Streamlined Inspections",
       description:
-        "Reduce inspection time by 60% with our digital checklists. Ensure thorough room-by-room evaluations without the paperwork hassle.",
+        "Reduce inspection time by 60% with our digital checklists. Ensure thorough room-by-room evaluations without the paperwork hassle. Our intuitive interface allows inspectors to quickly navigate through tasks, capture photos, and add notes on the go.",
     },
     {
       icon: ShieldCheck,
       title: "Compliance Assurance",
       description:
-        "Stay updated with the latest hospitality regulations. Our system adapts to new guidelines, keeping your property compliant and guest-ready.",
-    },
-    {
-      icon: TrendingUp,
-      title: "Performance Insights",
-      description:
-        "Gain valuable insights into your property's performance. Track improvements, identify areas for enhancement, and benchmark against industry standards.",
+        "Stay updated with the latest hospitality regulations. Our system adapts to new guidelines, keeping your property compliant and guest-ready. Receive automatic updates on regulatory changes and ensure your inspections meet the highest standards.",
     },
     {
       icon: Users,
-      title: "Staff Collaboration",
+      title: "Admin Management",
       description:
-        "Enhance communication between inspectors, management, and staff. Assign tasks, track progress, and ensure swift resolution of identified issues.",
-    },
-    {
-      icon: Bell,
-      title: "Instant Notifications",
-      description:
-        "Receive real-time alerts on critical issues. Stay informed about inspection progress and urgent matters requiring immediate attention.",
+        "Centralized control for administrators to oversee inspection processes, review submissions, and manage client establishments effectively. Gain insights through detailed reports and analytics to make informed decisions and improve operational efficiency.",
     },
     {
       icon: Award,
       title: "Quality Assurance",
       description:
-        "Maintain consistently high standards across all rooms and facilities. Uphold your property's reputation and ensure guest satisfaction.",
+        "Maintain consistently high standards across all accommodations through systematic pre-inspection processes and administrative oversight. Track performance metrics and identify areas for improvement to ensure exceptional guest experiences.",
     },
   ];
 
@@ -107,21 +100,21 @@ export default function CATMS() {
       icon: ClipboardList,
       title: "Pre-Inspection",
       description:
-        "Schedule inspections and prepare digital checklists. Access property history, previous reports, and specific room details for targeted evaluations.",
+        "Get ready for inspections by setting up schedules and checklists. We'll help you prepare everything you need for a smooth evaluation process.",
       videoUrl: "/videos/pre-inspection.mp4",
     },
     {
       icon: Search,
       title: "On-Site Inspection",
       description:
-        "Conduct thorough room-by-room inspections using our mobile app. Document findings with photos, notes, and ratings in real-time.",
+        "Conduct thorough property inspections using our easy-to-use web platform. Take photos, add notes, and rate different areas all in one place.",
       videoUrl: "/videos/on-site-inspection.mp4",
     },
     {
       icon: BarChart2,
       title: "Follow-up & Improvement",
       description:
-        "Track the implementation of recommendations. Set deadlines, assign tasks to staff, and monitor progress to ensure continuous improvement.",
+        "Track how well improvements are being made. Set deadlines, assign tasks to team members, and keep an eye on progress to help your property get better.",
       videoUrl: "/videos/follow-up-improvement.mp4",
     },
   ];
