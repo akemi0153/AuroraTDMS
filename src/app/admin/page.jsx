@@ -118,7 +118,9 @@ export default function AdminDashboard() {
             setTotalEstablishments(data.length);
             setApprovedEstablishments(
               data.filter(
-                (e) => e.status === "Approved" || e.status === "Approve"
+                (e) =>
+                  e.status === "Inspection Complete" ||
+                  e.status === "Inspection Completed"
               ).length
             );
           } catch (error) {
@@ -348,9 +350,6 @@ export default function AdminDashboard() {
                   className="w-[300px] pl-9 rounded-full bg-gray-100 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 transition-colors duration-200"
                 />
               </form>
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowInspectorModal(true)}

@@ -46,8 +46,13 @@ import {
   fetchSpecificAccommodations,
   getCurrentUser,
   signOut,
+  fetchServices,
+  fetchRooms,
+  fetchCottages,
+  fetchFacilities,
+  fetchEmployees,
+  databases,
 } from "@/services/appwrite";
-import { databases } from "@/services/appwrite";
 import {
   Dialog,
   DialogContent,
@@ -84,7 +89,7 @@ import {
 } from "@/components/ui/tooltip";
 import SettingsPage from "./settings";
 
-export default function DipaculaoPage() {
+export default function BalerPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [accommodations, setAccommodations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,10 +109,20 @@ export default function DipaculaoPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [analyticsData, setAnalyticsData] = useState({
     total: { count: 0, change: 0, trend: [] },
-    pending: { count: 0, change: 0, trend: [] },
-    approved: { count: 0, change: 0, trend: [] },
-    declined: { count: 0, change: 0, trend: [] },
+    awaitingInspection: { count: 0, change: 0, trend: [] },
+    inspectionComplete: { count: 0, change: 0, trend: [] },
+    requiresFollowUp: { count: 0, change: 0, trend: [] },
   });
+  const [viewServices, setViewServices] = useState([]);
+  const [viewRooms, setViewRooms] = useState([]);
+  const [viewCottages, setViewCottages] = useState([]);
+  const [viewFacilities, setViewFacilities] = useState([]);
+  const [viewEmployees, setViewEmployees] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+  const [loadingCottages, setLoadingCottages] = useState(true);
+  const [loadingFacilities, setLoadingFacilities] = useState(true);
+  const [loadingEmployees, setLoadingEmployees] = useState(true);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -181,9 +196,15 @@ export default function DipaculaoPage() {
         setAccommodations(data);
 
         // Calculate counts for each status
-        const pending = data.filter((acc) => acc.status === "pending").length;
-        const approved = data.filter((acc) => acc.status === "approved").length;
-        const declined = data.filter((acc) => acc.status === "declined").length;
+        const awaitingInspection = data.filter(
+          (acc) => acc.status === "Awaiting Inspection"
+        ).length;
+        const inspectionComplete = data.filter(
+          (acc) => acc.status === "Inspection Complete"
+        ).length;
+        const requiresFollowUp = data.filter(
+          (acc) => acc.status === "Requires Follow-up"
+        ).length;
 
         // Update analytics data
         setAnalyticsData({
@@ -192,18 +213,18 @@ export default function DipaculaoPage() {
             change: 20,
             trend: generateTrend(),
           },
-          pending: {
-            count: pending,
+          awaitingInspection: {
+            count: awaitingInspection,
             change: 5,
             trend: generateTrend(),
           },
-          approved: {
-            count: approved,
+          inspectionComplete: {
+            count: inspectionComplete,
             change: 10,
             trend: generateTrend(),
           },
-          declined: {
-            count: declined,
+          requiresFollowUp: {
+            count: requiresFollowUp,
             change: -2,
             trend: generateTrend(),
           },
@@ -268,6 +289,7 @@ export default function DipaculaoPage() {
         selectedEstablishment.$id,
         {
           appointmentDate: formattedDate,
+          status: "Inspection In Progress",
         }
       );
 
@@ -277,6 +299,7 @@ export default function DipaculaoPage() {
             ? {
                 ...acc,
                 appointmentDate: formattedDate,
+                status: "Inspection In Progress",
               }
             : acc
         )
@@ -292,9 +315,38 @@ export default function DipaculaoPage() {
     }
   };
 
-  const handleViewEstablishment = (establishment) => {
+  const handleViewEstablishment = async (establishment) => {
     setViewEstablishment(establishment);
     setViewModalOpen(true);
+
+    try {
+      setLoadingServices(true);
+      const services = await fetchServices(establishment.$id);
+      setViewServices(services);
+      setLoadingServices(false);
+
+      setLoadingRooms(true);
+      const rooms = await fetchRooms(establishment.$id);
+      setViewRooms(rooms);
+      setLoadingRooms(false);
+
+      setLoadingCottages(true);
+      const cottages = await fetchCottages(establishment.$id);
+      setViewCottages(cottages);
+      setLoadingCottages(false);
+
+      setLoadingFacilities(true);
+      const facilities = await fetchFacilities(establishment.$id);
+      setViewFacilities(facilities);
+      setLoadingFacilities(false);
+
+      setLoadingEmployees(true);
+      const employees = await fetchEmployees(establishment.$id);
+      setViewEmployees(employees);
+      setLoadingEmployees(false);
+    } catch (error) {
+      toast.error("Failed to fetch establishment details");
+    }
   };
 
   const updateStatusInDatabase = async (id, status) => {
@@ -321,8 +373,8 @@ export default function DipaculaoPage() {
       }
 
       if (
-        establishment.status === "approved" ||
-        establishment.status === "declined"
+        establishment.status === "Inspection Complete" ||
+        establishment.status === "Requires Follow-up"
       ) {
         toast.error(
           `Cannot change status of an establishment that is already ${establishment.status}.`
@@ -330,7 +382,7 @@ export default function DipaculaoPage() {
         return;
       }
 
-      if (newStatus === "declined") {
+      if (newStatus === "Requires Follow-up") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
@@ -350,7 +402,7 @@ export default function DipaculaoPage() {
 
   const handleDeclineSubmit = async () => {
     if (!declineReason.trim()) {
-      toast.error("Please provide a reason for declining");
+      toast.error("Please provide a reason for requiring follow-up");
       return;
     }
 
@@ -360,7 +412,7 @@ export default function DipaculaoPage() {
         "6741d7f2000200706b21",
         establishmentToDecline.id,
         {
-          status: "declined",
+          status: "Requires Follow-up",
           declineReason: declineReason,
         }
       );
@@ -368,7 +420,7 @@ export default function DipaculaoPage() {
       setAccommodations(
         accommodations.map((acc) =>
           acc.$id === establishmentToDecline.id
-            ? { ...acc, status: "declined", declineReason }
+            ? { ...acc, status: "Requires Follow-up", declineReason }
             : acc
         )
       );
@@ -376,20 +428,22 @@ export default function DipaculaoPage() {
       setDeclineModalOpen(false);
       setDeclineReason("");
       setEstablishmentToDecline(null);
-      toast.success("Establishment declined successfully");
+      toast.success("Establishment marked as Requires Follow-up");
     } catch (error) {
-      toast.error("Failed to decline establishment");
+      toast.error("Failed to update establishment status");
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
+      case "Awaiting Inspection":
         return "bg-yellow-100 text-yellow-800 border border-yellow-300";
-      case "approved":
+      case "Inspection Complete":
         return "bg-green-100 text-green-800 border border-green-300";
-      case "declined":
+      case "Requires Follow-up":
         return "bg-red-100 text-red-800 border border-red-300";
+      case "Inspection In Progress":
+        return "bg-blue-100 text-blue-800 border border-blue-300";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-300";
     }
@@ -397,12 +451,14 @@ export default function DipaculaoPage() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending":
+      case "Awaiting Inspection":
         return <Clock className="h-5 w-5" />;
-      case "approved":
+      case "Inspection Complete":
         return <CheckCircle className="h-5 w-5" />;
-      case "declined":
+      case "Requires Follow-up":
         return <XCircle className="h-5 w-5" />;
+      case "Inspection In Progress":
+        return <Clock className="h-5 w-5 animate-spin" />;
       default:
         return null;
     }
@@ -590,11 +646,6 @@ export default function DipaculaoPage() {
               />
             </motion.div>
           </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-          </div>
         </motion.header>
         <div className="container mx-auto p-6">
           {showSettings ? (
@@ -631,7 +682,7 @@ export default function DipaculaoPage() {
                 >
                   {renderCardContent(
                     "Total Establishments",
-                    <Users className="h-8 w-8 text-teal-100" />,
+                    <Users className="h-8 w-8 text-teal-800" />,
                     analyticsData.total,
                     "teal",
                     "#9f7aea"
@@ -643,9 +694,9 @@ export default function DipaculaoPage() {
                   transition={{ duration: 0.3 }}
                 >
                   {renderCardContent(
-                    "Pending Review",
+                    "Awaiting Inspection",
                     <AlertCircle className="h-8 w-8 text-yellow-100" />,
-                    analyticsData.pending,
+                    analyticsData.awaitingInspection,
                     "yellow",
                     "#ffd700"
                   )}
@@ -656,9 +707,9 @@ export default function DipaculaoPage() {
                   transition={{ duration: 0.3 }}
                 >
                   {renderCardContent(
-                    "Approved Establishments",
+                    "Inspection Complete",
                     <FileCheck2 className="h-8 w-8 text-green-100" />,
-                    analyticsData.approved,
+                    analyticsData.inspectionComplete,
                     "green",
                     "#48bb78"
                   )}
@@ -669,9 +720,9 @@ export default function DipaculaoPage() {
                   transition={{ duration: 0.3 }}
                 >
                   {renderCardContent(
-                    "Declined Establishments",
+                    "Requires Follow-up",
                     <XCircle className="h-8 w-8 text-red-100" />,
-                    analyticsData.declined,
+                    analyticsData.requiresFollowUp,
                     "red",
                     "#f56565"
                   )}
@@ -742,31 +793,35 @@ export default function DipaculaoPage() {
                                     onClick={() =>
                                       handleApprovalStatus(
                                         accommodation.$id,
-                                        "approved"
+                                        "Inspection Complete"
                                       )
                                     }
                                     disabled={
                                       !accommodation.appointmentDate ||
-                                      accommodation.status === "approved" ||
-                                      accommodation.status === "declined"
+                                      accommodation.status ===
+                                        "Inspection Complete" ||
+                                      accommodation.status ===
+                                        "Requires Follow-up"
                                     }
                                   >
-                                    Approve
+                                    Mark as Inspection Complete
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       handleApprovalStatus(
                                         accommodation.$id,
-                                        "declined"
+                                        "Requires Follow-up"
                                       )
                                     }
                                     disabled={
                                       !accommodation.appointmentDate ||
-                                      accommodation.status === "approved" ||
-                                      accommodation.status === "declined"
+                                      accommodation.status ===
+                                        "Inspection Complete" ||
+                                      accommodation.status ===
+                                        "Requires Follow-up"
                                     }
                                   >
-                                    Decline
+                                    Requires Follow-up
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -899,27 +954,94 @@ export default function DipaculaoPage() {
             </TabsContent>
             <TabsContent value="services">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add services rendering logic here */}
+                {loadingServices ? (
+                  <p>Loading services...</p>
+                ) : viewServices.length > 0 ? (
+                  viewServices.map((service, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Videoke Rental:</strong>{" "}
+                      {service.videokeRentalchecked
+                        ? "Available"
+                        : "Not Available"}
+                      <br />
+                      <strong>ATV Rental Price:</strong>{" "}
+                      {service.atvRentalprice}
+                      <br />
+                      <strong>Bicycle Rental Availability:</strong>{" "}
+                      {service.bicycleRentalavailability}
+                    </div>
+                  ))
+                ) : (
+                  <p>No services found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="rooms">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add rooms rendering logic here */}
+                {loadingRooms ? (
+                  <p>Loading rooms...</p>
+                ) : viewRooms.length > 0 ? (
+                  viewRooms.map((room, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Room Type:</strong> {room.type}
+                      <br />
+                      <strong>Capacity:</strong> {room.capacity}
+                    </div>
+                  ))
+                ) : (
+                  <p>No rooms found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="cottages">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add cottages rendering logic here */}
+                {loadingCottages ? (
+                  <p>Loading cottages...</p>
+                ) : viewCottages.length > 0 ? (
+                  viewCottages.map((cottage, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Cottage Name:</strong> {cottage.name}
+                      <br />
+                      <strong>Features:</strong> {cottage.features}
+                    </div>
+                  ))
+                ) : (
+                  <p>No cottages found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="facilities">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add facilities rendering logic here */}
+                {loadingFacilities ? (
+                  <p>Loading facilities...</p>
+                ) : viewFacilities.length > 0 ? (
+                  viewFacilities.map((facility, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Facility Name:</strong> {facility.name}
+                      <br />
+                      <strong>Type:</strong> {facility.type}
+                    </div>
+                  ))
+                ) : (
+                  <p>No facilities found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="employees">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add employees rendering logic here */}
+                {loadingEmployees ? (
+                  <p>Loading employees...</p>
+                ) : viewEmployees.length > 0 ? (
+                  viewEmployees.map((employee, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Employee Name:</strong> {employee.name}
+                      <br />
+                      <strong>Position:</strong> {employee.position}
+                    </div>
+                  ))
+                ) : (
+                  <p>No employees found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
           </Tabs>
@@ -928,15 +1050,16 @@ export default function DipaculaoPage() {
       <Dialog open={isDeclineModalOpen} onOpenChange={setDeclineModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Decline Establishment</DialogTitle>
+            <DialogTitle>Requires Follow-up</DialogTitle>
             <DialogDescription>
-              Please provide a reason for declining this establishment
+              Please provide a reason for marking this establishment as
+              requiring follow-up
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 space-y-4">
             <div className="grid gap-4">
               <label htmlFor="declineReason" className="text-sm font-medium">
-                Reason for Declining
+                Reason for Follow-up
               </label>
               <textarea
                 id="declineReason"

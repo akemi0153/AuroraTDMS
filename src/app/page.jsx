@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,8 +24,45 @@ import {
   Building,
   Zap,
 } from "lucide-react";
+import { X } from "lucide-react";
+
+const images = [
+  "/image/BB.png",
+  "/image/bay.png",
+  "/image/costa.png",
+  "/image/resort.jpg",
+  // Add more image paths as needed
+];
 
 export default function CATMS() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [expandedFAQ, setExpandedFAQ] = useState(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const openVideoModal = () => {
+    setIsVideoModalOpen(true);
+  };
+
+  const closeVideoModal = () => {
+    setIsVideoModalOpen(false);
+  };
+
+  const toggleFAQ = (index) => {
+    if (expandedFAQ === index) {
+      setExpandedFAQ(null);
+    } else {
+      setExpandedFAQ(index);
+    }
+  };
+
   const features = [
     {
       icon: ClipboardCheck,
@@ -71,24 +108,21 @@ export default function CATMS() {
       title: "Pre-Inspection",
       description:
         "Schedule inspections and prepare digital checklists. Access property history, previous reports, and specific room details for targeted evaluations.",
+      videoUrl: "/videos/pre-inspection.mp4",
     },
     {
       icon: Search,
       title: "On-Site Inspection",
       description:
         "Conduct thorough room-by-room inspections using our mobile app. Document findings with photos, notes, and ratings in real-time.",
-    },
-    {
-      icon: CheckCircle,
-      title: "Evaluation & Reporting",
-      description:
-        "Generate comprehensive reports instantly. Our AI-assisted system helps identify trends, suggest improvements, and prioritize actions.",
+      videoUrl: "/videos/on-site-inspection.mp4",
     },
     {
       icon: BarChart2,
       title: "Follow-up & Improvement",
       description:
         "Track the implementation of recommendations. Set deadlines, assign tasks to staff, and monitor progress to ensure continuous improvement.",
+      videoUrl: "/videos/follow-up-improvement.mp4",
     },
   ];
 
@@ -200,29 +234,21 @@ export default function CATMS() {
     },
   ];
 
-  const [expandedFAQ, setExpandedFAQ] = useState(null);
-
-  const toggleFAQ = (index) => {
-    if (expandedFAQ === index) {
-      setExpandedFAQ(null);
-    } else {
-      setExpandedFAQ(index);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="bg-indigo-700 text-white sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/image/lap.png"
-                alt="AccomoInspect Logo"
-                width={70}
-                height={70}
-              />
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="flex items-center">
+                <Image
+                  src="/image/lap.png"
+                  alt="AccomoInspect Logo"
+                  width={70}
+                  height={70}
+                />
+              </Link>
+            </div>
             <nav className="hidden md:block">
               <ul className="flex space-x-6">
                 <li>
@@ -275,6 +301,7 @@ export default function CATMS() {
                     size="lg"
                     variant="secondary"
                     className="bg-amber-400 text-indigo-900 hover:bg-amber-300"
+                    onClick={openVideoModal}
                   >
                     Watch Demo
                   </Button>
@@ -295,13 +322,22 @@ export default function CATMS() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Image
-                  src="/image/BB.png"
-                  alt="Accommodation Inspection"
-                  width={600}
-                  height={400}
-                  className="rounded-lg shadow-lg"
-                />
+                <div className="relative w-full h-[400px]">
+                  {images.map((src, index) => (
+                    <Image
+                      key={src}
+                      src={src}
+                      alt={`Slide ${index + 1}`}
+                      fill
+                      className={`rounded-lg shadow-lg object-cover transition-opacity duration-1000 ${
+                        index === currentImageIndex
+                          ? "opacity-100"
+                          : "opacity-0"
+                      }`}
+                      priority={index === 0}
+                    />
+                  ))}
+                </div>
               </motion.div>
             </div>
           </div>
@@ -337,7 +373,7 @@ export default function CATMS() {
               Streamlined Inspection Process
             </h2>
             <Tabs defaultValue="pre-inspection" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-8">
+              <TabsList className="grid w-full grid-cols-3 mb-8">
                 {inspectionSteps.map((step, index) => (
                   <TabsTrigger
                     key={index}
@@ -362,10 +398,20 @@ export default function CATMS() {
                         </h3>
                       </div>
                       <p className="text-gray-600 mb-4">{step.description}</p>
-                      <div className="aspect-video bg-teal-50 rounded-lg flex items-center justify-center">
-                        <p className="text-teal-500">
-                          Interactive demo or video placeholder
-                        </p>
+                      <div className="aspect-video bg-teal-50 rounded-lg overflow-hidden">
+                        {step.videoUrl ? (
+                          <video
+                            src={step.videoUrl}
+                            controls
+                            className="w-full h-full object-cover"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <p className="flex items-center justify-center h-full text-teal-500">
+                            Video coming soon
+                          </p>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -511,16 +557,40 @@ export default function CATMS() {
               </h3>
               <p className="text-sm">123 Hospitality Avenue, Global City</p>
               <p className="text-sm">Phone: (123) 456-7890</p>
-              <p className="text-sm">Email: info@accomoinspect.com</p>
+              <p className="text-sm">Email: auroratourismdev@outlook.com</p>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-700 text-center">
             <p className="text-sm">
               &copy; {new Date().getFullYear()} C.A.T.M.S. All rights reserved.
+              Develop by クリスチャン ジョセフ マリグメン.
             </p>
           </div>
         </div>
       </footer>
+
+      {isVideoModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-4xl bg-white rounded-lg shadow-lg">
+            <button
+              onClick={closeVideoModal}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              aria-label="Close video"
+            >
+              <X size={24} />
+            </button>
+            <div className="aspect-video">
+              <iframe
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                className="w-full h-full rounded-lg"
+                title="Demo Video"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

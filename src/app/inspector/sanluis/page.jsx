@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -46,8 +47,13 @@ import {
   fetchSpecificAccommodations,
   getCurrentUser,
   signOut,
+  fetchServices,
+  fetchRooms,
+  fetchCottages,
+  fetchFacilities,
+  fetchEmployees,
+  databases,
 } from "@/services/appwrite";
-import { databases } from "@/services/appwrite";
 import {
   Dialog,
   DialogContent,
@@ -71,18 +77,13 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   LineChart,
   Line,
 } from "recharts";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  Tooltip as UITooltip,
+  Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
@@ -99,6 +100,7 @@ export default function SanLuisPage() {
   const [appointmentDate, setAppointmentDate] = useState(null);
   const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [viewEstablishment, setViewEstablishment] = useState(null);
+  const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
@@ -108,11 +110,20 @@ export default function SanLuisPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [analyticsData, setAnalyticsData] = useState({
     total: { count: 0, change: 0, trend: [] },
-    pending: { count: 0, change: 0, trend: [] },
-    approved: { count: 0, change: 0, trend: [] },
-    declined: { count: 0, change: 0, trend: [] },
+    awaitingInspection: { count: 0, change: 0, trend: [] },
+    inspectionComplete: { count: 0, change: 0, trend: [] },
+    requiresFollowUp: { count: 0, change: 0, trend: [] },
   });
-  const router = useRouter();
+  const [viewServices, setViewServices] = useState([]);
+  const [viewRooms, setViewRooms] = useState([]);
+  const [viewCottages, setViewCottages] = useState([]);
+  const [viewFacilities, setViewFacilities] = useState([]);
+  const [viewEmployees, setViewEmployees] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+  const [loadingCottages, setLoadingCottages] = useState(true);
+  const [loadingFacilities, setLoadingFacilities] = useState(true);
+  const [loadingEmployees, setLoadingEmployees] = useState(true);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -186,30 +197,36 @@ export default function SanLuisPage() {
         setAccommodations(data);
 
         // Calculate counts for each status
-        const pending = data.filter((acc) => acc.status === "pending").length;
-        const approved = data.filter((acc) => acc.status === "approved").length;
-        const declined = data.filter((acc) => acc.status === "declined").length;
+        const awaitingInspection = data.filter(
+          (acc) => acc.status === "Awaiting Inspection"
+        ).length;
+        const inspectionComplete = data.filter(
+          (acc) => acc.status === "Inspection Complete"
+        ).length;
+        const requiresFollowUp = data.filter(
+          (acc) => acc.status === "Requires Follow-up"
+        ).length;
 
         // Update analytics data
         setAnalyticsData({
           total: {
             count: data.length,
-            change: 15,
+            change: 20,
             trend: generateTrend(),
           },
-          pending: {
-            count: pending,
-            change: 8,
+          awaitingInspection: {
+            count: awaitingInspection,
+            change: 5,
             trend: generateTrend(),
           },
-          approved: {
-            count: approved,
-            change: 12,
+          inspectionComplete: {
+            count: inspectionComplete,
+            change: 10,
             trend: generateTrend(),
           },
-          declined: {
-            count: declined,
-            change: -5,
+          requiresFollowUp: {
+            count: requiresFollowUp,
+            change: -2,
             trend: generateTrend(),
           },
         });
@@ -273,6 +290,7 @@ export default function SanLuisPage() {
         selectedEstablishment.$id,
         {
           appointmentDate: formattedDate,
+          status: "Inspection In Progress",
         }
       );
 
@@ -282,6 +300,7 @@ export default function SanLuisPage() {
             ? {
                 ...acc,
                 appointmentDate: formattedDate,
+                status: "Inspection In Progress",
               }
             : acc
         )
@@ -297,9 +316,38 @@ export default function SanLuisPage() {
     }
   };
 
-  const handleViewEstablishment = (establishment) => {
+  const handleViewEstablishment = async (establishment) => {
     setViewEstablishment(establishment);
     setViewModalOpen(true);
+
+    try {
+      setLoadingServices(true);
+      const services = await fetchServices(establishment.$id);
+      setViewServices(services);
+      setLoadingServices(false);
+
+      setLoadingRooms(true);
+      const rooms = await fetchRooms(establishment.$id);
+      setViewRooms(rooms);
+      setLoadingRooms(false);
+
+      setLoadingCottages(true);
+      const cottages = await fetchCottages(establishment.$id);
+      setViewCottages(cottages);
+      setLoadingCottages(false);
+
+      setLoadingFacilities(true);
+      const facilities = await fetchFacilities(establishment.$id);
+      setViewFacilities(facilities);
+      setLoadingFacilities(false);
+
+      setLoadingEmployees(true);
+      const employees = await fetchEmployees(establishment.$id);
+      setViewEmployees(employees);
+      setLoadingEmployees(false);
+    } catch (error) {
+      toast.error("Failed to fetch establishment details");
+    }
   };
 
   const updateStatusInDatabase = async (id, status) => {
@@ -326,8 +374,8 @@ export default function SanLuisPage() {
       }
 
       if (
-        establishment.status === "approved" ||
-        establishment.status === "declined"
+        establishment.status === "Inspection Complete" ||
+        establishment.status === "Requires Follow-up"
       ) {
         toast.error(
           `Cannot change status of an establishment that is already ${establishment.status}.`
@@ -335,7 +383,7 @@ export default function SanLuisPage() {
         return;
       }
 
-      if (newStatus === "declined") {
+      if (newStatus === "Requires Follow-up") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
@@ -355,7 +403,7 @@ export default function SanLuisPage() {
 
   const handleDeclineSubmit = async () => {
     if (!declineReason.trim()) {
-      toast.error("Please provide a reason for declining");
+      toast.error("Please provide a reason for requiring follow-up");
       return;
     }
 
@@ -365,7 +413,7 @@ export default function SanLuisPage() {
         "6741d7f2000200706b21",
         establishmentToDecline.id,
         {
-          status: "declined",
+          status: "Requires Follow-up",
           declineReason: declineReason,
         }
       );
@@ -373,7 +421,7 @@ export default function SanLuisPage() {
       setAccommodations(
         accommodations.map((acc) =>
           acc.$id === establishmentToDecline.id
-            ? { ...acc, status: "declined", declineReason }
+            ? { ...acc, status: "Requires Follow-up", declineReason }
             : acc
         )
       );
@@ -381,20 +429,22 @@ export default function SanLuisPage() {
       setDeclineModalOpen(false);
       setDeclineReason("");
       setEstablishmentToDecline(null);
-      toast.success("Establishment declined successfully");
+      toast.success("Establishment marked as Requires Follow-up");
     } catch (error) {
-      toast.error("Failed to decline establishment");
+      toast.error("Failed to update establishment status");
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
+      case "Awaiting Inspection":
         return "bg-yellow-100 text-yellow-800 border border-yellow-300";
-      case "approved":
+      case "Inspection Complete":
         return "bg-green-100 text-green-800 border border-green-300";
-      case "declined":
+      case "Requires Follow-up":
         return "bg-red-100 text-red-800 border border-red-300";
+      case "Inspection In Progress":
+        return "bg-blue-100 text-blue-800 border border-blue-300";
       default:
         return "bg-gray-100 text-gray-800 border border-gray-300";
     }
@@ -402,12 +452,14 @@ export default function SanLuisPage() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending":
+      case "Awaiting Inspection":
         return <Clock className="h-5 w-5" />;
-      case "approved":
+      case "Inspection Complete":
         return <CheckCircle className="h-5 w-5" />;
-      case "declined":
+      case "Requires Follow-up":
         return <XCircle className="h-5 w-5" />;
+      case "Inspection In Progress":
+        return <Clock className="h-5 w-5 animate-spin" />;
       default:
         return null;
     }
@@ -456,7 +508,7 @@ export default function SanLuisPage() {
             <ArrowDownRight className="mr-1 h-3 w-3 text-red-300" />
           )}
           <TooltipProvider>
-            <UITooltip>
+            <Tooltip>
               <TooltipTrigger asChild>
                 <span
                   className={
@@ -469,7 +521,7 @@ export default function SanLuisPage() {
               <TooltipContent>
                 <p>Compared to the previous month</p>
               </TooltipContent>
-            </UITooltip>
+            </Tooltip>
           </TooltipProvider>
         </div>
         <div className="h-10 mt-2">
@@ -481,7 +533,7 @@ export default function SanLuisPage() {
 
   if (!authChecked) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-r from-orange-500 to-yellow-600">
+      <div className="flex h-screen items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
         <motion.div
           className="text-center text-white"
           initial={{ scale: 0.8, opacity: 0 }}
@@ -497,7 +549,7 @@ export default function SanLuisPage() {
 
   if (!isAuthorized) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-r from-red-500 to-yellow-600">
+      <div className="flex h-screen items-center justify-center bg-gradient-to-r from-red-500 to-pink-600">
         <motion.div
           className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full"
           initial={{ y: -50, opacity: 0 }}
@@ -523,7 +575,7 @@ export default function SanLuisPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-green-50 to-teal-100">
+    <div className="flex h-screen bg-gradient-to-br from-purple-50 to-pink-100">
       <motion.aside
         className="fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0"
         initial={{ x: -100, opacity: 0 }}
@@ -531,7 +583,7 @@ export default function SanLuisPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="flex h-16 items-center justify-center border-b">
-          <span className="text-xl font-semibold text-teal-600">
+          <span className="text-xl font-semibold text-purple-600">
             San Luis Dashboard
           </span>
         </div>
@@ -540,7 +592,7 @@ export default function SanLuisPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                !showSettings ? "bg-green-100 text-teal-700" : ""
+                !showSettings ? "bg-purple-100 text-purple-700" : ""
               }`}
               onClick={() => setShowSettings(false)}
             >
@@ -550,7 +602,7 @@ export default function SanLuisPage() {
             <Button
               variant="ghost"
               className={`justify-start ${
-                showSettings ? "bg-green-100 text-teal-700" : ""
+                showSettings ? "bg-purple-100 text-purple-700" : ""
               }`}
               onClick={() => setShowSettings(true)}
             >
@@ -595,11 +647,6 @@ export default function SanLuisPage() {
               />
             </motion.div>
           </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-          </div>
         </motion.header>
         <div className="container mx-auto p-6">
           {showSettings ? (
@@ -607,7 +654,7 @@ export default function SanLuisPage() {
           ) : (
             <>
               <motion.h1
-                className="mb-6 text-3xl font-bold text-teal-800"
+                className="mb-6 text-3xl font-bold text-purple-800"
                 variants={fadeIn}
                 initial="initial"
                 animate="animate"
@@ -615,7 +662,7 @@ export default function SanLuisPage() {
                 San Luis Overview
               </motion.h1>
               <motion.div
-                className="mb-6 text-lg text-teal-600"
+                className="mb-6 text-lg text-purple-600"
                 variants={fadeIn}
                 initial="initial"
                 animate="animate"
@@ -636,9 +683,9 @@ export default function SanLuisPage() {
                 >
                   {renderCardContent(
                     "Total Establishments",
-                    <Users className="h-8 w-8 text-teal-100" />,
+                    <Users className="h-8 w-8 text-purple-100" />,
                     analyticsData.total,
-                    "teal",
+                    "purple",
                     "#9f7aea"
                   )}
                 </motion.div>
@@ -648,9 +695,9 @@ export default function SanLuisPage() {
                   transition={{ duration: 0.3 }}
                 >
                   {renderCardContent(
-                    "Pending Review",
+                    "Awaiting Inspection",
                     <AlertCircle className="h-8 w-8 text-yellow-100" />,
-                    analyticsData.pending,
+                    analyticsData.awaitingInspection,
                     "yellow",
                     "#ffd700"
                   )}
@@ -661,9 +708,9 @@ export default function SanLuisPage() {
                   transition={{ duration: 0.3 }}
                 >
                   {renderCardContent(
-                    "Approved Establishments",
+                    "Inspection Complete",
                     <FileCheck2 className="h-8 w-8 text-green-100" />,
-                    analyticsData.approved,
+                    analyticsData.inspectionComplete,
                     "green",
                     "#48bb78"
                   )}
@@ -674,9 +721,9 @@ export default function SanLuisPage() {
                   transition={{ duration: 0.3 }}
                 >
                   {renderCardContent(
-                    "Declined Establishments",
+                    "Requires Follow-up",
                     <XCircle className="h-8 w-8 text-red-100" />,
-                    analyticsData.declined,
+                    analyticsData.requiresFollowUp,
                     "red",
                     "#f56565"
                   )}
@@ -688,7 +735,7 @@ export default function SanLuisPage() {
                 initial="initial"
                 animate="animate"
               >
-                <h2 className="text-2xl font-semibold mb-4 text-teal-700">
+                <h2 className="text-2xl font-semibold mb-4 text-purple-700">
                   Establishments
                 </h2>
                 <Card className="overflow-hidden">
@@ -703,17 +750,17 @@ export default function SanLuisPage() {
                   ) : filteredAccommodations.length > 0 ? (
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-green-50">
-                          <TableHead className="font-semibold text-teal-900">
+                        <TableRow className="bg-purple-50">
+                          <TableHead className="font-semibold text-purple-900">
                             Establishment Name
                           </TableHead>
-                          <TableHead className="font-semibold text-teal-900">
+                          <TableHead className="font-semibold text-purple-900">
                             Municipality
                           </TableHead>
-                          <TableHead className="font-semibold text-teal-900">
+                          <TableHead className="font-semibold text-purple-900">
                             Status
                           </TableHead>
-                          <TableHead className="font-semibold text-teal-900">
+                          <TableHead className="font-semibold text-purple-900">
                             Actions
                           </TableHead>
                         </TableRow>
@@ -747,31 +794,35 @@ export default function SanLuisPage() {
                                     onClick={() =>
                                       handleApprovalStatus(
                                         accommodation.$id,
-                                        "approved"
+                                        "Inspection Complete"
                                       )
                                     }
                                     disabled={
                                       !accommodation.appointmentDate ||
-                                      accommodation.status === "approved" ||
-                                      accommodation.status === "declined"
+                                      accommodation.status ===
+                                        "Inspection Complete" ||
+                                      accommodation.status ===
+                                        "Requires Follow-up"
                                     }
                                   >
-                                    Approve
+                                    Mark as Inspection Complete
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       handleApprovalStatus(
                                         accommodation.$id,
-                                        "declined"
+                                        "Requires Follow-up"
                                       )
                                     }
                                     disabled={
                                       !accommodation.appointmentDate ||
-                                      accommodation.status === "approved" ||
-                                      accommodation.status === "declined"
+                                      accommodation.status ===
+                                        "Inspection Complete" ||
+                                      accommodation.status ===
+                                        "Requires Follow-up"
                                     }
                                   >
-                                    Decline
+                                    Requires Follow-up
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -784,7 +835,7 @@ export default function SanLuisPage() {
                                   onClick={() =>
                                     handleSetAppointment(accommodation)
                                   }
-                                  className="text-teal-600 border-purple-600 hover:bg-purple-50"
+                                  className="text-purple-600 border-purple-600 hover:bg-purple-50"
                                 >
                                   {accommodation.appointmentDate
                                     ? "Appointment Set"
@@ -904,27 +955,94 @@ export default function SanLuisPage() {
             </TabsContent>
             <TabsContent value="services">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add services rendering logic here */}
+                {loadingServices ? (
+                  <p>Loading services...</p>
+                ) : viewServices.length > 0 ? (
+                  viewServices.map((service, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Videoke Rental:</strong>{" "}
+                      {service.videokeRentalchecked
+                        ? "Available"
+                        : "Not Available"}
+                      <br />
+                      <strong>ATV Rental Price:</strong>{" "}
+                      {service.atvRentalprice}
+                      <br />
+                      <strong>Bicycle Rental Availability:</strong>{" "}
+                      {service.bicycleRentalavailability}
+                    </div>
+                  ))
+                ) : (
+                  <p>No services found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="rooms">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add rooms rendering logic here */}
+                {loadingRooms ? (
+                  <p>Loading rooms...</p>
+                ) : viewRooms.length > 0 ? (
+                  viewRooms.map((room, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Room Type:</strong> {room.type}
+                      <br />
+                      <strong>Capacity:</strong> {room.capacity}
+                    </div>
+                  ))
+                ) : (
+                  <p>No rooms found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="cottages">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add cottages rendering logic here */}
+                {loadingCottages ? (
+                  <p>Loading cottages...</p>
+                ) : viewCottages.length > 0 ? (
+                  viewCottages.map((cottage, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Cottage Name:</strong> {cottage.name}
+                      <br />
+                      <strong>Features:</strong> {cottage.features}
+                    </div>
+                  ))
+                ) : (
+                  <p>No cottages found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="facilities">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add facilities rendering logic here */}
+                {loadingFacilities ? (
+                  <p>Loading facilities...</p>
+                ) : viewFacilities.length > 0 ? (
+                  viewFacilities.map((facility, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Facility Name:</strong> {facility.name}
+                      <br />
+                      <strong>Type:</strong> {facility.type}
+                    </div>
+                  ))
+                ) : (
+                  <p>No facilities found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="employees">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {/* Add employees rendering logic here */}
+                {loadingEmployees ? (
+                  <p>Loading employees...</p>
+                ) : viewEmployees.length > 0 ? (
+                  viewEmployees.map((employee, index) => (
+                    <div key={index} className="mb-2">
+                      <strong>Employee Name:</strong> {employee.name}
+                      <br />
+                      <strong>Position:</strong> {employee.position}
+                    </div>
+                  ))
+                ) : (
+                  <p>No employees found.</p>
+                )}
               </ScrollArea>
             </TabsContent>
           </Tabs>
@@ -933,15 +1051,16 @@ export default function SanLuisPage() {
       <Dialog open={isDeclineModalOpen} onOpenChange={setDeclineModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Decline Establishment</DialogTitle>
+            <DialogTitle>Requires Follow-up</DialogTitle>
             <DialogDescription>
-              Please provide a reason for declining this establishment
+              Please provide a reason for marking this establishment as
+              requiring follow-up
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 space-y-4">
             <div className="grid gap-4">
               <label htmlFor="declineReason" className="text-sm font-medium">
-                Reason for Declining
+                Reason for Follow-up
               </label>
               <textarea
                 id="declineReason"
@@ -971,3 +1090,7 @@ export default function SanLuisPage() {
     </div>
   );
 }
+
+SanLuisPage.propTypes = {
+  // Add any props and their types here if needed
+};

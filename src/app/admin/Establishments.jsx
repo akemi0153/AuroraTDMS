@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Eye, ChevronLeft, ChevronRight, CheckCircle, Clock, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -114,6 +114,7 @@ export default function Establishments() {
                 </TableHead>
                 <TableHead className="font-semibold">Municipality</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="font-semibold">Decline Reason</TableHead>
                 <TableHead className="text-right font-semibold">
                   Actions
                 </TableHead>
@@ -132,20 +133,45 @@ export default function Establishments() {
                   <TableCell>
                     <Badge
                       className={
-                        establishment.status === "Approved" ||
-                        establishment.status === "Approve"
+                        establishment.status === "Inspection Completed" ||
+                        establishment.status === "Inspection Complete"
                           ? "bg-blue-100 text-blue-800"
-                          : establishment.status === "Pending"
-                          ? "bg-orange-100 text-orange-800"
-                          : establishment.status === "Rejected"
-                          ? "bg-purple-100 text-purple-800"
+                          : establishment.status === "Awaiting Inspection"
+                          ? "bg-orange-100 text-yellow-500"
+                          : establishment.status === "Requires Follow-up"
+                          ? "bg-purple-100 text-red-600"
+                          : establishment.status === "Inspection in Progress"
+                          ? "bg-green-100 text-green-800"
                           : "bg-gray-100 text-gray-800"
                       }
                     >
-                      {establishment.status === "Approve"
-                        ? "Approved"
-                        : establishment.status || ""}
+                      {establishment.status === "Inspection Complete" ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Inspection Completed
+                        </>
+                      ) : establishment.status === "Awaiting Inspection" ? (
+                        <>
+                          <Clock className="h-4 w-4 mr-1" />
+                          Awaiting Inspection
+                        </>
+                      ) : establishment.status === "Requires Follow-up" ? (
+                        <>
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          Requires Follow-up
+                        </>
+                      ) : establishment.status === "Inspection in Progress" ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Inspection in Progress
+                        </>
+                      ) : (
+                        establishment.status || ""
+                      )}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {establishment.declineReason || "N/A"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -236,6 +262,10 @@ export default function Establishments() {
                 <div>
                   <h4 className="font-semibold">Status</h4>
                   <p>{selectedEstablishment.status}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Decline Reason</h4>
+                  <p>{selectedEstablishment.declineReason || "N/A"}</p>
                 </div>
                 <div>
                   <h4 className="font-semibold">Contact Person</h4>

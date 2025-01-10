@@ -10,7 +10,7 @@ export const appwriteConfig = {
   cottagesCollectionId: "674342ba0017b324fb03",
   employeesCollectionId: "67432e7e00241eb80e40",
   facilitiesCollectionId: "6741e31a0022f8e43fb3",
-  roomsCollectionId: "67432e7e00241eb80e40",
+  roomsCollectionId: "6742f65c003e2169aa2b",
   servicesCollectionId: "6743c72d003a2d3b298d",
   logsCollectionId: "6766ffac001f897801e9",
 };
@@ -293,7 +293,7 @@ export async function fetchAccommodations() {
     );
     return result.documents.map((doc) => ({
       ...doc,
-      approvalStatus: doc.approvalStatus || "pending",
+      approvalStatus: doc.approvalStatus || "Awaiting Inspection",
     }));
   } catch (error) {
     throw new Error("Failed to fetch accommodations");
@@ -436,7 +436,7 @@ export async function createActivityLog(logData) {
       throw new Error("User not authenticated");
     }
 
-    // Only admin
+    // Only admin can create activity logs
     if (currentUser.role !== "admin") {
       throw new Error("Unauthorized to create activity logs");
     }

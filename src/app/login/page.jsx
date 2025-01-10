@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +12,7 @@ import { useAuthUserStore } from "@/services/user";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Modal from "@/components/modal";
 
 function ResizableImage() {
   return (
@@ -119,16 +119,13 @@ export default function LoginPage() {
     try {
       const user = await signIn(email, password);
       setAuthUser(user);
-
       document.cookie = `sessionId=${user.$id}; path=/`;
       document.cookie = `userRole=${user.role}; path=/`;
       document.cookie = `userMunicipality=${user.municipality || ""}; path=/`;
-
       sessionStorage.setItem("userRole", user.role);
       if (user.municipality) {
         sessionStorage.setItem("userMunicipality", user.municipality);
       }
-
       await handleRoleRedirect();
     } catch (error) {
       toast.error(error.message || "Login failed, please try again.");
@@ -149,7 +146,6 @@ export default function LoginPage() {
       toast.success("Account created successfully! Please log in.");
       setActiveTab("login");
     } catch (error) {
-      console.error("Signup error:", error.message);
       toast.error(error.message || "Signup failed, please try again.");
     } finally {
       setIsLoading(false);
@@ -201,7 +197,7 @@ export default function LoginPage() {
                       <div className="space-y-2">
                         <Label
                           htmlFor="email"
-                          className="text-[#00838f] font-semibold"
+                          className="text-black font-semibold"
                         >
                           Email
                         </Label>
@@ -225,7 +221,7 @@ export default function LoginPage() {
                         <div className="flex items-center justify-between">
                           <Label
                             htmlFor="password"
-                            className="text-[#00838f] font-semibold"
+                            className="text-black font-semibold"
                           >
                             Password
                           </Label>
@@ -278,7 +274,7 @@ export default function LoginPage() {
                       <div className="space-y-2">
                         <Label
                           htmlFor="name"
-                          className="text-[#00838f] font-semibold"
+                          className="text-black font-semibold"
                         >
                           Full Name
                         </Label>
@@ -300,7 +296,7 @@ export default function LoginPage() {
                       <div className="space-y-2">
                         <Label
                           htmlFor="signup-email"
-                          className="text-[#00838f] font-semibold"
+                          className="text-black font-semibold"
                         >
                           Email
                         </Label>
@@ -323,7 +319,7 @@ export default function LoginPage() {
                       <div className="space-y-2">
                         <Label
                           htmlFor="signup-password"
-                          className="text-[#00838f] font-semibold"
+                          className="text-black font-semibold"
                         >
                           Create Password
                         </Label>
@@ -346,7 +342,7 @@ export default function LoginPage() {
                       <div className="space-y-2">
                         <Label
                           htmlFor="confirm-password"
-                          className="text-[#00838f] font-semibold"
+                          className="text-black font-semibold"
                         >
                           Confirm Password
                         </Label>
