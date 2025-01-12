@@ -24,7 +24,6 @@ import {
   Building,
   Zap,
 } from "lucide-react";
-import { X } from "lucide-react";
 
 const images = [
   "/image/bay.png",
@@ -129,18 +128,12 @@ export default function CATMS() {
       question:
         "Can the system be customized for different types of accommodations?",
       answer:
-        "Yes, our system is highly flexible and can be tailored to various accommodation types, including hotels, resorts, vacation rentals, and boutique properties. Customizable checklists and evaluation criteria ensure that inspections are relevant to your specific property type and brand standards.",
+        "Yes, our system is highly flexible and can be tailored to various accommodation types, including hotels, resorts, vacation rentals. Customizable checklists and evaluation criteria ensure that inspections are relevant to your specific property type and brand standards.",
     },
     {
       question: "How does the system ensure data security and guest privacy?",
       answer:
         "We adhere strictly to the Philippine Data Protection Law to safeguard all information. Our system employs robust encryption and security measures to protect data. Access to sensitive information is tightly controlled based on user roles, and we ensure that all data handling practices comply with the requirements set forth by the Philippine data protection regulations.",
-    },
-    {
-      question:
-        "Can the system integrate with our existing property management software?",
-      answer:
-        "Yes, our system is designed with integration in mind. It can seamlessly connect with various property management systems, housekeeping software, and maintenance tracking tools. This ensures a smooth flow of information across your entire operation, from front desk to back-of-house.",
     },
     {
       question: "How does the system help in maintaining brand standards?",
@@ -150,7 +143,7 @@ export default function CATMS() {
     {
       question: "What kind of support and training do you offer?",
       answer:
-        "We provide comprehensive onboarding and training for all users, including inspectors, management, and staff. Our support team is available 24/7 to assist with any questions or issues. We also offer regular webinars and updates on best practices in accommodation inspection and quality management.",
+        "We provide comprehensive onboarding and training for Tourism Officials, Hotel Staff, and Municipalities Inspectors. Our support team is available on a scheduled basis within Monday, Wednesday, Thursday, and Friday to assist with any questions or issues. We also offer regular webinars and updates on best practices in accommodation inspection and quality management.",
     },
     {
       question:
@@ -185,13 +178,6 @@ export default function CATMS() {
               accommodation types found in Central Aurora, from beach resorts to
               mountain lodges, ensuring relevant criteria for each property
               type.
-            </li>
-            <li>
-              <span className="font-semibold">Multilingual Support:</span>{" "}
-              Recognizing the diverse linguistic landscape of Central Aurora,
-              C.A.T.M.S supports multiple languages commonly spoken in the
-              region, facilitating clear communication between inspectors,
-              staff, and management.
             </li>
             <li>
               <span className="font-semibold">Seasonal Adaptability:</span> The
@@ -563,23 +549,24 @@ export default function CATMS() {
       </footer>
 
       {isVideoModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeVideoModal();
+            }
+          }}
+        >
           <div className="relative w-full max-w-4xl bg-white rounded-lg shadow-lg">
-            <button
-              onClick={closeVideoModal}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              aria-label="Close video"
-            >
-              <X size={24} />
-            </button>
             <div className="aspect-video">
-              <iframe
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
+              <video
+                src="/videos/demo.mp4"
+                controls
                 className="w-full h-full rounded-lg"
                 title="Demo Video"
-              />
+              >
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </div>
