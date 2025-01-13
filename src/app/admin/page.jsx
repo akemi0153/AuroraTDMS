@@ -266,7 +266,7 @@ export default function AdminDashboard() {
         >
           <div className="flex h-16 items-center justify-between px-4 border-b dark:border-gray-700">
             <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">
-              Admin Dashboard
+              ADMINISTRATOR
             </span>
             <Button
               variant="ghost"
@@ -348,13 +348,15 @@ export default function AdminDashboard() {
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowInspectorModal(true)}
-                className="rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-400 dark:hover:bg-blue-800"
-              >
-                Create Inspector Account
-              </Button>
+              {currentPage === "users" && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowInspectorModal(true)}
+                  className="rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-400 dark:hover:bg-blue-800"
+                >
+                  Create Inspector Account
+                </Button>
+              )}
               <div className="flex items-center space-x-2">
                 <Sun className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
                 <Switch

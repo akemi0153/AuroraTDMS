@@ -72,7 +72,7 @@ export default function Dashboard() {
           databases.listDocuments(
             "672cfccb002f456cb332", // databaseId
             "672cfcd0003c114264cd", // userCollectionId
-            [Query.limit(100)] // Adjust the limit as needed
+            [Query.limit(100)]
           ),
         ]);
         setAccommodations(accommodationsData);
@@ -103,8 +103,8 @@ export default function Dashboard() {
   const totalEstablishments = accommodations.length;
   const totalMunicipalities = new Set(accommodations.map((e) => e.municipality))
     .size;
-  const pendingApprovals = accommodations.filter(
-    (e) => e.status === "Pending"
+  const awaitingInspection = accommodations.filter(
+    (e) => e.status === "Awaiting Inspection"
   ).length;
 
   const municipalityData = Object.entries(
@@ -181,7 +181,7 @@ export default function Dashboard() {
       ["Key Metrics", "", "", ""],
       ["Total Establishments", totalEstablishments, "", ""],
       ["Total Municipalities", totalMunicipalities, "", ""],
-      ["Pending Approvals", pendingApprovals, "", ""],
+      ["Pending Approvals", awaitingInspection, "", ""],
       ["Total Users", users.length, "", ""],
       ["", "", "", ""],
 
@@ -237,11 +237,11 @@ export default function Dashboard() {
           trend={`${((totalMunicipalities / 4) * 100).toFixed(2)}%`}
         />
         <StatCard
-          title="Pending Approvals"
-          value={pendingApprovals}
-          description="Awaiting review"
+          title="Awaiting Inspection"
+          value={awaitingInspection}
+          description="Establishments to inspect"
           icon={<Activity className="h-6 w-6 text-yellow-500" />}
-          trend={`${((pendingApprovals / totalEstablishments) * 100).toFixed(
+          trend={`${((awaitingInspection / totalEstablishments) * 100).toFixed(
             2
           )}%`}
         />
