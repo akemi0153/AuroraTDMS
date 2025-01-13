@@ -19,6 +19,12 @@ const Profile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [originalData, setOriginalData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -39,12 +45,15 @@ const Profile = () => {
             dateJoined: userDoc.$createdAt,
           });
 
-          setFormData({
+          const initialData = {
             name: userDoc.name || currentAccount.name,
             email: currentAccount.email,
             phone: userDoc.phone || "",
             address: userDoc.address || "",
-          });
+          };
+
+          setFormData(initialData);
+          setOriginalData(initialData);
         }
 
         setLoading(false);
@@ -93,8 +102,16 @@ const Profile = () => {
       }));
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      toast.error("Failed to update profile: " + error.message);
     }
+  };
+
+  const hasChanges = () => {
+    return (
+      formData.name !== originalData.name ||
+      formData.phone !== originalData.phone ||
+      formData.address !== originalData.address
+    );
   };
 
   const InputField = ({
@@ -229,6 +246,11 @@ const Profile = () => {
               <Button
                 type="submit"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md transition-colors duration-300"
+                disabled={!hasChanges()}
+                style={{
+                  opacity: !hasChanges() ? 0.5 : 1,
+                  cursor: !hasChanges() ? "not-allowed" : "pointer",
+                }}
               >
                 Update Profile
               </Button>
