@@ -493,7 +493,7 @@ export default function SanLuisPage() {
 
   const renderCardContent = (title, icon, data, color, sparklineColor) => (
     <Card
-      className={`bg-gradient-to-br from-${color}-500 to-${color}-600 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
+      className={`bg-${color} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -683,10 +683,10 @@ export default function SanLuisPage() {
                 >
                   {renderCardContent(
                     "Total Establishments",
-                    <Users className="h-8 w-8 text-purple-100" />,
+                    <Users className="h-8 w-8" />,
                     analyticsData.total,
-                    "purple",
-                    "#9f7aea"
+                    "purple-600",
+                    "#ffffff"
                   )}
                 </motion.div>
                 <motion.div
@@ -696,10 +696,13 @@ export default function SanLuisPage() {
                 >
                   {renderCardContent(
                     "Awaiting Inspection",
-                    <AlertCircle className="h-8 w-8 text-yellow-100" />,
-                    analyticsData.awaitingInspection,
-                    "yellow",
-                    "#ffd700"
+                    <AlertCircle className="h-8 w-8" />,
+                    {
+                      ...analyticsData.awaitingInspection,
+                      trend: generateTrend("awaiting"),
+                    },
+                    "yellow-500",
+                    "#ffffff"
                   )}
                 </motion.div>
                 <motion.div
@@ -709,10 +712,13 @@ export default function SanLuisPage() {
                 >
                   {renderCardContent(
                     "Inspection Complete",
-                    <FileCheck2 className="h-8 w-8 text-green-100" />,
-                    analyticsData.inspectionComplete,
-                    "green",
-                    "#48bb78"
+                    <FileCheck2 className="h-8 w-8" />,
+                    {
+                      ...analyticsData.inspectionComplete,
+                      trend: generateTrend("complete"),
+                    },
+                    "green-500",
+                    "#ffffff"
                   )}
                 </motion.div>
                 <motion.div
@@ -722,10 +728,13 @@ export default function SanLuisPage() {
                 >
                   {renderCardContent(
                     "Requires Follow-up",
-                    <XCircle className="h-8 w-8 text-red-100" />,
-                    analyticsData.requiresFollowUp,
-                    "red",
-                    "#f56565"
+                    <XCircle className="h-8 w-8" />,
+                    {
+                      ...analyticsData.requiresFollowUp,
+                      trend: generateTrend("followup"),
+                    },
+                    "red-500",
+                    "#ffffff"
                   )}
                 </motion.div>
               </motion.div>

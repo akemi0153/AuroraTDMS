@@ -63,6 +63,7 @@ export default function AdminDashboard() {
   const [authChecked, setAuthChecked] = useState(false);
   const [approvedEstablishments, setApprovedEstablishments] = useState(0);
   const [totalEstablishments, setTotalEstablishments] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const municipalities = ["Baler", "San Luis", "Maria Aurora", "Dipaculao"];
 
@@ -229,7 +230,12 @@ export default function AdminDashboard() {
           />
         );
       case "establishments":
-        return <Establishments establishments={establishments} />;
+        return (
+          <Establishments
+            searchTerm={searchTerm}
+            establishments={establishments}
+          />
+        );
       case "users":
         return <UsersPage />;
       case "activity":
@@ -342,14 +348,6 @@ export default function AdminDashboard() {
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <form className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="Search establishments..."
-                  className="w-[300px] pl-9 rounded-full bg-gray-100 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600 transition-colors duration-200"
-                />
-              </form>
               <Button
                 variant="outline"
                 onClick={() => setShowInspectorModal(true)}

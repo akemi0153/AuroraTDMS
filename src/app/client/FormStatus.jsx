@@ -1,17 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { databases } from "@/services/appwrite";
-import { Query } from "appwrite";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Loader2,
   CheckCircle,
   Clock,
   AlertTriangle,
-  Loader2,
   Building,
   MapPin,
   Phone,
@@ -19,19 +16,22 @@ import {
   Calendar,
   FileText,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { databases } from "@/services/appwrite";
+import { Query } from "appwrite";
+import { toast } from "react-hot-toast";
 
 const FormStatus = () => {
-  const [formStatuses, setFormStatuses] = useState([]);
+  const router = useRouter();
   const [accommodationDetails, setAccommodationDetails] = useState(null);
+  const [formStatuses, setFormStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-
       try {
         const userId = sessionStorage.getItem("userId");
         if (!userId) throw new Error("No user logged in");
@@ -43,6 +43,7 @@ const FormStatus = () => {
         setAccommodationDetails(accommodationResponse);
         setFormStatuses(formStatusesResponse);
       } catch (err) {
+        console.error("Error fetching data:", err);
         setError("Failed to fetch data");
       } finally {
         setLoading(false);
@@ -62,51 +63,111 @@ const FormStatus = () => {
   };
 
   const fetchFormStatuses = async (userId) => {
-    try {
-      const response = await databases.listDocuments(
-        "672cfccb002f456cb332",
-        "6741d7f2000200706b21",
-        [
-          Query.equal("userId", userId),
-          Query.orderDesc("$createdAt"),
-          Query.select([
-            "$id",
-            "$createdAt",
-            "establishmentName",
-            "status",
-            "accommodationId",
-            "appointmentDate",
-          ]),
-        ]
-      );
-      return response.documents;
-    } catch (error) {
-      setError("Failed to fetch form statuses");
-      return [];
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Approved":
-        return <CheckCircle className="text-green-500" size={24} />;
-      case "In Review":
-        return <Clock className="text-yellow-500" size={24} />;
-      case "Rejected":
-        return <AlertTriangle className="text-red-500" size={24} />;
-      case "Pending":
-        return <Clock className="text-blue-500" size={24} />;
-      default:
-        return <Clock className="text-gray-500" size={24} />;
-    }
+    const response = await databases.listDocuments(
+      "672cfccb002f456cb332",
+      "6741d7f2000200706b21",
+      [
+        Query.equal("userId", userId),
+        Query.orderDesc("$createdAt"),
+        Query.select([
+          "$id",
+          "$createdAt",
+          "establishmentName",
+          "status",
+          "accommodationId",
+          "appointmentDate",
+        ]),
+      ]
+    );
+    return response.documents;
   };
 
   const handleSubmitNewForm = () => {
     const userId = sessionStorage.getItem("userId");
-    if (userId) {
-      router.push(`/tourism-form?userId=${userId}`);
-    } else {
+    if (!userId) {
       console.error("No userId found in session storage");
+      toast.error("User session not found. Please log in again.");
+      return;
+    }
+
+    // Check if there is any existing form
+    if (formStatuses.length > 0) {
+      toast.error("Cannot submit a new form while there is an existing form.");
+      return;
+    }
+
+    const latestForm = formStatuses[0];
+
+    // Check for Inspection in Progress status
+    if (latestForm && latestForm.status === "Inspection in Progress") {
+      toast.error("Cannot submit new form while inspection is in progress");
+      return;
+    }
+
+    // Check for Inspection Complete status
+    if (latestForm && latestForm.status === "Inspection Complete") {
+      toast.error("Form cannot be updated as the inspection is completed.");
+      return;
+    }
+
+    const formPath =
+      latestForm && latestForm.status === "Requires Follow-up"
+        ? `/update-form?formId=${latestForm.$id}`
+        : `/tourism-form?userId=${userId}`;
+
+    router.push(formPath);
+  };
+
+  const renderSubmitButton = () => {
+    if (!accommodationDetails) {
+      return (
+        <Button
+          onClick={handleSubmitNewForm}
+          className="mb-6 bg-indigo-600 hover:bg-indigo-700 text-white"
+          disabled={formStatuses.length > 0}
+        >
+          Submit an Accommodation Form
+        </Button>
+      );
+    }
+
+    const { status } = accommodationDetails;
+
+    // Check if the status is "Inspection in Progress" or "Inspection Complete"
+    if (
+      status === "Inspection in Progress" ||
+      status === "Inspection Complete"
+    ) {
+      return null; // Do not render the button if status is either "Inspection in Progress" or "Inspection Complete"
+    }
+
+    // Disable button if there are existing forms
+    const isDisabled = formStatuses.length > 0;
+
+    return (
+      <Button
+        onClick={handleSubmitNewForm}
+        className={`mb-6 bg-indigo-600 hover:bg-indigo-700 text-white ${
+          isDisabled ? "opacity-50 cursor-not-allowed" : ""
+        }`}
+        disabled={isDisabled}
+      >
+        {status === "Requires Follow-up" ? "Update Form" : "Submit New Form"}
+      </Button>
+    );
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Inspection Complete":
+        return <CheckCircle className="text-green-500" size={24} />;
+      case "In Review":
+      case "Inspection in Progress":
+        return <Clock className="text-yellow-500" size={24} />;
+      case "Requires Follow-up":
+        return <AlertTriangle className="text-red-500" size={24} />;
+      default:
+        return <Clock className="text-blue-500" size={24} />;
     }
   };
 
@@ -251,12 +312,7 @@ const FormStatus = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        <Button
-          onClick={handleSubmitNewForm}
-          className="mb-6 bg-indigo-600 hover:bg-indigo-700"
-        >
-          Submit New Accommodation Form
-        </Button>
+        {renderSubmitButton()}
       </motion.div>
 
       {formStatuses.length === 0 ? (
@@ -279,7 +335,7 @@ const FormStatus = () => {
                     <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
                       {getStatusIcon(form.status)}
                       <span className="text-sm font-medium">
-                        {form.status || "Pending"}
+                        {form.status || "Awaiting Inspection"}
                       </span>
                     </div>
                   </CardTitle>

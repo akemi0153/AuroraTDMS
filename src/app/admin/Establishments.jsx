@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Download, Eye, ChevronLeft, ChevronRight, CheckCircle, Clock, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Download,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -28,6 +38,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 export default function Establishments() {
   const [establishments, setEstablishments] = useState([]);
@@ -37,6 +48,7 @@ export default function Establishments() {
   const [itemsPerPage] = useState(10);
   const [selectedEstablishment, setSelectedEstablishment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const loadEstablishments = async () => {
@@ -56,11 +68,24 @@ export default function Establishments() {
     loadEstablishments();
   }, []);
 
-  const filteredEstablishments = establishments.filter(
-    (establishment) =>
+  const filteredEstablishments = establishments.filter((establishment) => {
+    // First apply the search term filter
+    const matchesSearch =
+      (establishment.establishmentName?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (establishment.municipality?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      );
+
+    // Then apply the municipality filter if a specific municipality is selected
+    const matchesMunicipality =
       selectedMunicipality === "All" ||
-      establishment.municipality === selectedMunicipality
-  );
+      establishment.municipality === selectedMunicipality;
+
+    // Return true only if both conditions are met
+    return matchesSearch && matchesMunicipality;
+  });
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -80,6 +105,16 @@ export default function Establishments() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold">Establishments</h2>
         <div className="flex items-center space-x-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <Input
+              type="search"
+              placeholder="Search establishments..."
+              className="w-[300px] pl-9 rounded-full bg-gray-100 dark:bg-gray-700 focus:bg-white dark:focus:bg-gray-600"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           <Select
             value={selectedMunicipality}
             onValueChange={setSelectedMunicipality}
@@ -89,13 +124,13 @@ export default function Establishments() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="All">All Municipalities</SelectItem>
-              {Array.from(
-                new Set(establishments.map((e) => e.municipality))
-              ).map((municipality) => (
-                <SelectItem key={municipality} value={municipality}>
-                  {municipality}
-                </SelectItem>
-              ))}
+              {Array.from(new Set(establishments.map((e) => e.municipality)))
+                .sort()
+                .map((municipality) => (
+                  <SelectItem key={municipality} value={municipality}>
+                    {municipality}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -170,9 +205,7 @@ export default function Establishments() {
                       )}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {establishment.declineReason || "N/A"}
-                  </TableCell>
+                  <TableCell>{establishment.declineReason || "N/A"}</TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"

@@ -47,12 +47,23 @@ export default function TourismForm() {
   };
 
   const onSubmit = async (data = {}) => {
-    const accommodationId = uuidv4(); // Generate a unique ID for this accommodation
+    const accommodationId = uuidv4();
     try {
-      // Retrieve the userId from session storage
       const userId = sessionStorage.getItem("userId");
       if (!userId) {
         throw new Error("User is not logged in.");
+      }
+
+      // Check for existing submission for this user
+      const response = await fetch(`/api/check-submission?userId=${userId}`);
+      const existingSubmission = await response.json();
+
+      if (existingSubmission.exists) {
+        toast.error(
+          "You have already submitted a form. Only one submission is allowed."
+        );
+        router.push("/client");
+        return;
       }
 
       // Normalize website URL
@@ -62,6 +73,7 @@ export default function TourismForm() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
         throw new Error("Invalid email address format");
       }
+
       // Destructure the data into separate sections
       const {
         municipality,
@@ -179,7 +191,7 @@ export default function TourismForm() {
         twitter,
         website: normalizedWebsite,
         bookingCompany,
-        status: "Pending", // Set default status to "Pending"
+        status: "Awaiting Inspection", // Set default status to "Pending"
         userId, // Add the userId here
         declineReason: "", // Add the declineReason attribute with an empty string as default
       });
@@ -355,15 +367,21 @@ export default function TourismForm() {
         foreignmaleNum: parseInt(data.foreignmaleNum) || 0, // Number of foreign male employees
         foreignfemaleNum: parseInt(data.foreignfemaleNum) || 0, // Number of foreign female employees
       });
-      // After successful submission
+
       sessionStorage.setItem("formSubmitted", "true");
       router.push("/client");
       toast.success("Form submitted successfully!");
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error(
-        "An error occurred while submitting the form. Please try again."
-      );
+      if (error.message === "Duplicate submission") {
+        toast.error(
+          "You have already submitted a form. Only one submission is allowed."
+        );
+      } else {
+        toast.error(
+          "An error occurred while submitting the form. Please try again."
+        );
+      }
     }
   };
 

@@ -240,8 +240,17 @@ export default function BalerPage() {
     loadAccommodations();
   }, []);
 
-  const generateTrend = () => {
-    return Array.from({ length: 7 }, () => Math.floor(Math.random() * 100));
+  const generateTrend = (type) => {
+    switch (type) {
+      case "awaiting":
+        return [2, 5, 3, 8, 4, 6, 5, 7]; // Upward trend
+      case "complete":
+        return [8, 7, 6, 8, 9, 7, 8, 9]; // High performance pattern
+      case "followup":
+        return [4, 2, 3, 1, 3, 2, 4, 2]; // Fluctuating pattern
+      default:
+        return [3, -10, -2, 5, 7, -2, 4, 6]; // Original pattern for Total
+    }
   };
 
   const filteredAccommodations = accommodations.filter((acc) =>
@@ -483,8 +492,9 @@ export default function BalerPage() {
           type="monotone"
           dataKey="value"
           stroke={color}
-          strokeWidth={1.5}
+          strokeWidth={2}
           dot={false}
+          strokeOpacity={1}
         />
       </LineChart>
     </ResponsiveContainer>
@@ -492,7 +502,7 @@ export default function BalerPage() {
 
   const renderCardContent = (title, icon, data, color, sparklineColor) => (
     <Card
-      className={`bg-gradient-to-br from-${color}-500 to-${color}-600 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
+      className={`bg-${color} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -682,10 +692,10 @@ export default function BalerPage() {
                 >
                   {renderCardContent(
                     "Total Establishments",
-                    <Users className="h-8 w-8 text-purple-100" />,
+                    <Users className="h-8 w-8" />,
                     analyticsData.total,
-                    "purple",
-                    "#9f7aea"
+                    "indigo-600",
+                    "#ffffff"
                   )}
                 </motion.div>
                 <motion.div
@@ -695,10 +705,13 @@ export default function BalerPage() {
                 >
                   {renderCardContent(
                     "Awaiting Inspection",
-                    <AlertCircle className="h-8 w-8 text-yellow-100" />,
-                    analyticsData.awaitingInspection,
-                    "yellow",
-                    "#ffd700"
+                    <AlertCircle className="h-8 w-8" />,
+                    {
+                      ...analyticsData.awaitingInspection,
+                      trend: generateTrend("awaiting"),
+                    },
+                    "yellow-500",
+                    "#ffffff"
                   )}
                 </motion.div>
                 <motion.div
@@ -708,10 +721,13 @@ export default function BalerPage() {
                 >
                   {renderCardContent(
                     "Inspection Complete",
-                    <FileCheck2 className="h-8 w-8 text-green-100" />,
-                    analyticsData.inspectionComplete,
-                    "green",
-                    "#48bb78"
+                    <FileCheck2 className="h-8 w-8" />,
+                    {
+                      ...analyticsData.inspectionComplete,
+                      trend: generateTrend("complete"),
+                    },
+                    "green-500",
+                    "#ffffff"
                   )}
                 </motion.div>
                 <motion.div
@@ -721,10 +737,13 @@ export default function BalerPage() {
                 >
                   {renderCardContent(
                     "Requires Follow-up",
-                    <XCircle className="h-8 w-8 text-red-100" />,
-                    analyticsData.requiresFollowUp,
-                    "red",
-                    "#f56565"
+                    <XCircle className="h-8 w-8" />,
+                    {
+                      ...analyticsData.requiresFollowUp,
+                      trend: generateTrend("followup"),
+                    },
+                    "red-500",
+                    "#ffffff"
                   )}
                 </motion.div>
               </motion.div>

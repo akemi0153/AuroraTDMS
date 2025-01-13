@@ -22,7 +22,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Home, Users, Activity, TrendingUp } from "lucide-react";
+import { Home, Users, Activity, TrendingUp, Download } from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -37,6 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchAccommodations } from "@/services/appwrite";
+import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 const client = new Client();
 client
@@ -167,11 +169,57 @@ export default function Dashboard() {
     },
   };
 
+  const generateReport = () => {
+    // Prepare data for the report
+    const reportData = [
+      // Header row
+      ["Dashboard Overview Report", "", "", ""],
+      ["Generated on:", new Date().toLocaleString(), "", ""],
+      ["", "", "", ""],
+
+      // Statistics
+      ["Key Metrics", "", "", ""],
+      ["Total Establishments", totalEstablishments, "", ""],
+      ["Total Municipalities", totalMunicipalities, "", ""],
+      ["Pending Approvals", pendingApprovals, "", ""],
+      ["Total Users", users.length, "", ""],
+      ["", "", "", ""],
+
+      // Municipality Data
+      ["Establishments per Municipality", "", "", ""],
+      ["Municipality", "Count", "", ""],
+      ...municipalityData.map((item) => [item.name, item.count, "", ""]),
+      ["", "", "", ""],
+
+      // User Roles Data
+      ["User Role Distribution", "", "", ""],
+      ["Role", "Count", "", ""],
+      ...userRoleData.map((item) => [item.name, item.value, "", ""]),
+    ];
+
+    // Create worksheet
+    const ws = XLSX.utils.aoa_to_sheet(reportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dashboard Report");
+
+    // Generate & Download Excel file
+    XLSX.writeFile(
+      wb,
+      `Dashboard_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-        Dashboard Overview
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Dashboard Overview
+        </h2>
+        <Button onClick={generateReport} className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Export Report
+        </Button>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard

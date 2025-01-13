@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Client, Databases, Query } from "appwrite";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, Download } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import * as XLSX from "xlsx";
 
 // Initialize Appwrite client
 const client = new Client();
@@ -27,7 +28,6 @@ export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
   const loadUsers = async () => {
     setLoading(true);
@@ -59,16 +59,34 @@ export default function UsersPage() {
     }
   };
 
+  const generateUserReport = () => {
+    // Prepare data for the report
+    const reportData = [
+      // Header row
+      ["Users Report", "", ""],
+      ["Generated on:", new Date().toLocaleString(), ""],
+      ["", "", ""],
+
+      // Users data
+      ["Name", "Email", "Role"],
+      ...users.map((user) => [user.name, user.email, user.role || "N/A"]),
+    ];
+
+    // Create worksheet
+    const ws = XLSX.utils.aoa_to_sheet(reportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Users Report");
+
+    // Generate & Download Excel file
+    XLSX.writeFile(
+      wb,
+      `Users_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
+  };
+
   useEffect(() => {
     loadUsers();
   }, []);
-
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.role && user.role.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
   if (loading) {
     return (
@@ -99,22 +117,22 @@ export default function UsersPage() {
 
   return (
     <div className="container mx-auto p-6 dark:bg-gray-900 dark:text-gray-100">
-      <h1 className="mb-6 text-3xl font-bold">Users</h1>
-      <div className="mb-4">
-        <Input
-          type="text"
-          placeholder="Search users..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
-        />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Users</h1>
+        <Button
+          onClick={generateUserReport}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export Users Report
+        </Button>
       </div>
       <Card className="overflow-hidden dark:bg-gray-800">
         <CardHeader className="bg-sky-100 dark:bg-gray-700">
           <CardTitle>User List</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredUsers.length === 0 ? (
+          {users.length === 0 ? (
             <p>No users found.</p>
           ) : (
             <Table>
@@ -126,7 +144,7 @@ export default function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {users.map((user) => (
                   <TableRow
                     key={user.$id}
                     className="hover:bg-sky-50 dark:hover:bg-gray-700 transition-colors duration-200"

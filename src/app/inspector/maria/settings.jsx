@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { getCurrentUser } from "@/services/appwrite";
-import { databases } from "@/services/appwrite";
+import { databases, appwriteConfig } from "@/services/appwrite";
+import { account } from "@/services/appwrite";
 
 export default function SettingsPage() {
   const [name, setName] = useState("");
@@ -25,7 +26,6 @@ export default function SettingsPage() {
         setEmail(user.email || "");
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching current user:", error);
         toast.error("Failed to fetch user information");
         setLoading(false);
       }
@@ -42,24 +42,50 @@ export default function SettingsPage() {
     }
 
     try {
-      // Update user information
+      // First update the account information
+      if (password) {
+        await account.updatePassword(password);
+      }
+
+      if (email !== currentUser.email) {
+        await account.updateEmail(email);
+      }
+
+      if (name !== currentUser.name) {
+        await account.updateName(name);
+      }
+
+      // Then update the user document in the database
       await databases.updateDocument(
-        "672cfccb002f456cb332", // Replace with your actual database ID
-        "6741d7f2000200706b21", // Replace with your actual collection ID
+        appwriteConfig.databaseId,
+        appwriteConfig.userCollectionId,
         currentUser.$id,
         {
           name: name,
           email: email,
-          // Note: Updating password should typically be done through a separate, secure process
-          // This is just a placeholder for demonstration
-          ...(password && { password: password }),
         }
       );
 
+      // Update current user state
+      setCurrentUser((prev) => ({
+        ...prev,
+        name,
+        email,
+      }));
+
+      // Clear password fields
+      setPassword("");
+      setConfirmPassword("");
+
       toast.success("Settings updated successfully");
     } catch (error) {
-      console.error("Error updating settings:", error);
-      toast.error("Failed to update settings");
+      if (error.code === 401) {
+        toast.error("Authentication failed. Please log in again.");
+      } else if (error.code === 409) {
+        toast.error("Email already exists. Please use a different email.");
+      } else {
+        toast.error("Failed to update settings: " + error.message);
+      }
     }
   };
 
@@ -69,7 +95,7 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="mb-6 text-3xl font-bold text-orange-800">Settings</h1>
+      <h1 className="mb-6 text-3xl font-bold text-indigo-800">Settings</h1>
       <Card>
         <CardHeader>
           <CardTitle>User Settings</CardTitle>

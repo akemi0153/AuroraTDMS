@@ -15,7 +15,6 @@ import { toast } from "react-hot-toast";
 
 const ActivityLogs = () => {
   const [logs, setLogs] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -45,18 +44,6 @@ const ActivityLogs = () => {
 
     loadLogs();
   }, []);
-
-  const handleChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const filtered = logs.filter(
-    (log) =>
-      log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.municipality.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.role && log.role.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
 
   if (isLoading) {
     return (
@@ -96,19 +83,6 @@ const ActivityLogs = () => {
         <CardTitle>Activity Logs</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 relative">
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={20}
-          />
-          <Input
-            type="text"
-            placeholder="Search logs..."
-            value={searchTerm}
-            onChange={handleChange}
-            className="pl-10"
-          />
-        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -121,7 +95,7 @@ const ActivityLogs = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((log) => (
+            {logs.map((log) => (
               <TableRow key={log.id}>
                 <TableCell>{log.municipality}</TableCell>
                 <TableCell>{log.appointmentDate}</TableCell>
