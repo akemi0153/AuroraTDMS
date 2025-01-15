@@ -500,9 +500,9 @@ export default function BalerPage() {
     </ResponsiveContainer>
   );
 
-  const renderCardContent = (title, icon, data, color, sparklineColor) => (
+  const renderCardContent = (title, icon, data, bgColor, sparklineColor) => (
     <Card
-      className={`bg-${color} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
+      className={`${bgColor} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -512,18 +512,14 @@ export default function BalerPage() {
         <div className="text-2xl font-bold">{data.count}</div>
         <div className="flex items-center text-xs mt-1">
           {data.change > 0 ? (
-            <ArrowUpRight className="mr-1 h-3 w-3 text-green-300" />
+            <ArrowUpRight className="mr-1 h-3 w-3 text-white opacity-80" />
           ) : (
-            <ArrowDownRight className="mr-1 h-3 w-3 text-red-300" />
+            <ArrowDownRight className="mr-1 h-3 w-3 text-white opacity-80" />
           )}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span
-                  className={
-                    data.change > 0 ? "text-green-300" : "text-red-300"
-                  }
-                >
+                <span className="text-white opacity-80">
                   {Math.abs(data.change)}% from last period
                 </span>
               </TooltipTrigger>
@@ -694,8 +690,8 @@ export default function BalerPage() {
                     "Total Establishments",
                     <Users className="h-8 w-8" />,
                     analyticsData.total,
-                    "indigo-600",
-                    "#ffffff"
+                    "bg-blue-600",
+                    "#E3F2FD"
                   )}
                 </motion.div>
                 <motion.div
@@ -710,8 +706,8 @@ export default function BalerPage() {
                       ...analyticsData.awaitingInspection,
                       trend: generateTrend("awaiting"),
                     },
-                    "yellow-500",
-                    "#ffffff"
+                    "bg-amber-500",
+                    "#FFF8E1"
                   )}
                 </motion.div>
                 <motion.div
@@ -726,8 +722,8 @@ export default function BalerPage() {
                       ...analyticsData.inspectionComplete,
                       trend: generateTrend("complete"),
                     },
-                    "green-500",
-                    "#ffffff"
+                    "bg-emerald-500",
+                    "#E8F5E9"
                   )}
                 </motion.div>
                 <motion.div
@@ -742,8 +738,8 @@ export default function BalerPage() {
                       ...analyticsData.requiresFollowUp,
                       trend: generateTrend("followup"),
                     },
-                    "red-500",
-                    "#ffffff"
+                    "bg-rose-500",
+                    "#FFF5F5"
                   )}
                 </motion.div>
               </motion.div>

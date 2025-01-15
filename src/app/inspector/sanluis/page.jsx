@@ -241,8 +241,17 @@ export default function SanLuisPage() {
     loadAccommodations();
   }, []);
 
-  const generateTrend = () => {
-    return Array.from({ length: 7 }, () => Math.floor(Math.random() * 100));
+  const generateTrend = (type) => {
+    switch (type) {
+      case "awaiting":
+        return [2, 5, 3, 8, 4, 6, 5, 7]; // Upward trend
+      case "complete":
+        return [8, 7, 6, 8, 9, 7, 8, 9]; // High performance pattern
+      case "followup":
+        return [4, 2, 3, 1, 3, 2, 4, 2]; // Fluctuating pattern
+      default:
+        return [3, -10, -2, 5, 7, -2, 4, 6]; // Original pattern for Total
+    }
   };
 
   const filteredAccommodations = accommodations.filter((acc) =>
@@ -484,8 +493,9 @@ export default function SanLuisPage() {
           type="monotone"
           dataKey="value"
           stroke={color}
-          strokeWidth={1.5}
+          strokeWidth={2}
           dot={false}
+          strokeOpacity={1}
         />
       </LineChart>
     </ResponsiveContainer>
@@ -511,9 +521,7 @@ export default function SanLuisPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <span
-                  className={
-                    data.change > 0 ? "text-green-300" : "text-red-300"
-                  }
+                  className={data.change > 0 ? "text-green-300" : "text-red-300"}
                 >
                   {Math.abs(data.change)}% from last period
                 </span>
@@ -685,7 +693,7 @@ export default function SanLuisPage() {
                     "Total Establishments",
                     <Users className="h-8 w-8" />,
                     analyticsData.total,
-                    "purple-600",
+                    "indigo-600",
                     "#ffffff"
                   )}
                 </motion.div>

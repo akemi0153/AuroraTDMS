@@ -143,7 +143,13 @@ export default function CATMS() {
     {
       question: "What kind of support and training do you offer?",
       answer:
-        "We provide comprehensive onboarding and training for Tourism Officials, Hotel Staff, and Municipalities Inspectors. Our support team is available on a scheduled basis within Monday, Wednesday, Thursday, and Friday to assist with any questions or issues. We also offer regular webinars and updates on best practices in accommodation inspection and quality management.",
+        "We provide comprehensive onboarding and training for Tourism Officers, Hotel Staff, and Municipalities Inspectors. Our support team is available on a scheduled basis within Monday, Wednesday, Thursday, and Friday to assist with any questions or issues. We also offer regular webinars and updates on best practices in accommodation inspection and quality management.",
+    },
+    {
+      question:
+        "What legal mandates govern tourism data submission in Aurora Province?",
+      answer:
+        "Under Provincial Ordinance No. 473 and Republic Act No. 9593 (Tourism Act of 2009), all accommodation establishments in Aurora Province including Hotels, Resorts, Apartelles, Pension Houses, Tourist Inns, Transient Houses, and similar establishments are required to submit their tourism statistical data to the Provincial Tourism Office for proper implementation and monitoring.",
     },
     {
       question:
