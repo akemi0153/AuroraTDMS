@@ -510,6 +510,29 @@ export default function CATMS() {
                 elevate hospitality standards and enhance guest experiences
                 through efficient, data-driven inspections.
               </p>
+              <div className="flex space-x-4 mt-4">
+                <Image
+                  src="/image/DOT.png"
+                  alt="D.O.T"
+                  width={80}
+                  height={80}
+                  className="object-contain"
+                />
+                <Image
+                  src="/image/lap.png"
+                  alt="Aurora Province"
+                  width={80}
+                  height={80}
+                  className="object-contain"
+                />
+                <Image
+                  src="/image/bgaurora.png"
+                  alt="Aurora Provincial Logo"
+                  width={80}
+                  height={80}
+                  className="object-contain"
+                />
+              </div>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
@@ -533,6 +556,30 @@ export default function CATMS() {
                   <Link href="/privacy" className="text-sm hover:underline">
                     Privacy Policy
                   </Link>
+                </li>
+                <li>
+                  <a
+                    href="https://beta.tourism.gov.ph/accreditations/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm hover:underline flex items-center gap-1"
+                  >
+                    DOT Accreditation Portal
+                    <svg
+                      className="w-4 h-4 inline"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -566,7 +613,7 @@ export default function CATMS() {
           <div className="relative w-full max-w-4xl bg-white rounded-lg shadow-lg">
             <div className="aspect-video">
               <video
-                src="/video/demo.mp4"
+                src="/videos/demo.mp4"
                 controls
                 className="w-full h-full rounded-lg"
                 title="Demo Video"
