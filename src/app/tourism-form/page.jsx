@@ -15,7 +15,9 @@ import Cottages from "./Cottages";
 import Services from "./Services";
 import Employees from "./Employees";
 import { v4 as uuidv4 } from "uuid";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
+import { XCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function TourismForm() {
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -25,23 +27,6 @@ export default function TourismForm() {
 
   const { authUser, clearAuthUser } = useAuthUserStore();
   const router = useRouter();
-
-  useEffect(() => {
-    // Validate user on component mount
-    if (authUser) {
-      if (authUser.role === "user") {
-        setIsAuthorized(true);
-        setIsLoading(false);
-      } else {
-        toast.error("Access denied! User role required.");
-        setIsAuthorized(false);
-        router.push("/login");
-      }
-    } else {
-      toast.error("You must be logged in to access this page.");
-      router.push("/login");
-    }
-  }, [authUser, router]);
 
   const handleLogout = async () => {
     try {
@@ -62,139 +47,80 @@ export default function TourismForm() {
   };
 
   const onSubmit = async (data = {}) => {
-    const accommodationId = uuidv4(); // Generate a unique ID for this accommodation
+    const accommodationId = uuidv4();
     try {
+      const userId = sessionStorage.getItem("userId");
+      if (!userId) {
+        throw new Error("User is not logged in.");
+      }
+
+      // Check for existing submission for this user
+      try {
+        const response = await fetch(`/api/check-submission?userId=${userId}`);
+        if (!response.ok) {
+          throw new Error("Failed to check submission status");
+        }
+        const existingSubmission = await response.json();
+
+        if (existingSubmission.exists) {
+          toast.error(
+            "You have already submitted a form. Only one submission is allowed."
+          );
+          router.push("/client");
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking submission:", error);
+        // Continue with submission if check fails
+      }
+
       // Normalize website URL
       const normalizedWebsite = normalizeUrl(data.website);
+
       // Validate email format before submission
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
         throw new Error("Invalid email address format");
       }
-      // Destructure the data into separate sections
-      const {
-        municipality,
-        establishmentName,
-        businessAddress,
-        contactNumber,
-        accreditationNumber,
-        expirationDate,
-        licenseNumber,
-        contactPerson,
-        designation,
-        email,
-        facebook,
-        instagram,
-        twitter,
-        website,
-        bookingCompany,
-      } = data;
 
-      // Flatten facilities data
-      const facilitiesData = {
-        accommodationId, // Unique identifier for the accommodation
-
-        // Dining Outlets
-        diningOutletschecked: !!data.diningOutlets?.restaurant?.checked,
-        diningOutletscapacity:
-          parseInt(data.diningOutlets?.restaurant?.capacity) || 0,
-        barchecked: !!data.diningOutlets?.bar?.checked,
-        barcapacity: parseInt(data.diningOutlets?.bar?.capacity) || 0,
-        coffeeShopchecked: !!data.diningOutlets?.coffeeShop?.checked,
-        coffeeShopcapacity:
-          parseInt(data.diningOutlets?.coffeeShop?.capacity) || 0,
-
-        // Conference/Convention Facilities
-        conventionHallchecked:
-          !!data.conferenceConvention?.conventionHall?.checked,
-        conventionHallcapacity:
-          parseInt(data.conferenceConvention?.conventionHall?.capacity) || 0,
-        conventionHallacprice:
-          parseFloat(data.conferenceConvention?.conventionHall?.acPrice) || 0.0,
-        conventionHallnonacprice:
-          parseFloat(data.conferenceConvention?.conventionHall?.nonAcPrice) ||
-          0.0,
-        conferenceHallchecked:
-          !!data.conferenceConvention?.conferenceHall?.checked,
-        conferenceHallcapacity:
-          parseInt(data.conferenceConvention?.conferenceHall?.capacity) || 0,
-        conferenceHallacprice:
-          parseFloat(data.conferenceConvention?.conferenceHall?.acPrice) || 0.0,
-        conferenceHallnonacprice:
-          parseFloat(data.conferenceConvention?.conferenceHall?.nonAcPrice) ||
-          0.0,
-        functionHallchecked: !!data.conferenceConvention?.functionHall?.checked,
-        functionHallcapacity:
-          parseInt(data.conferenceConvention?.functionHall?.capacity) || 0,
-        functionHallacprice:
-          parseFloat(data.conferenceConvention?.functionHall?.acPrice) || 0.0,
-        functionHallnonacprice:
-          parseFloat(data.conferenceConvention?.functionHall?.nonAcPrice) ||
-          0.0,
-        meetingRoomchecked: !!data.conferenceConvention?.meetingRoom?.checked,
-        meetingHallcapacity:
-          parseInt(data.conferenceConvention?.meetingRoom?.capacity) || 0,
-        meetingRoomacprice:
-          parseFloat(data.conferenceConvention?.meetingRoom?.acPrice) || 0.0,
-        meetingRoomnonacprice:
-          parseFloat(data.conferenceConvention?.meetingRoom?.nonAcPrice) || 0.0,
-
-        // Marine Recreation
-        kayakingchecked: !!data.marineRecreation?.kayaking?.checked,
-        kayakingNum: parseInt(data.marineRecreation?.kayaking?.quantity) || 0,
-        kayakingprice:
-          parseFloat(data.marineRecreation?.kayaking?.price) || 0.0,
-        boardSurfingchecked: !!data.marineRecreation?.boardSurfing?.checked,
-        boardSurfingNum:
-          parseInt(data.marineRecreation?.boardSurfing?.quantity) || 0,
-        boardSurfingprice:
-          parseFloat(data.marineRecreation?.boardSurfing?.price) || 0.0,
-        snorkelingchecked: !!data.marineRecreation?.snorkeling?.checked,
-        snorkelingNum:
-          parseInt(data.marineRecreation?.snorkeling?.quantity) || 0,
-        snorkelingprice:
-          parseFloat(data.marineRecreation?.snorkeling?.price) || 0.0,
-
-        // Swimming Pools
-        adultPooldepth: data.adultPool?.depth || "",
-        adultPoolsize: data.adultPool?.size || "",
-        childrensPooldepth: data.childrenPool?.depth || "",
-        childrensPoolsize: data.childrenPool?.size || "",
-
-        // Sports Recreation
-        basketballCourtchecked: !!data.sportsRecreation?.basketballCourt,
-        tennisCourtchecked: !!data.sportsRecreation?.tennisCourt,
-        badmintonCourtchecked: !!data.sportsRecreation?.badmintonCourt,
-        volleyballCourtchecked: !!data.sportsRecreation?.volleyballCourt,
-        beachVolleyballchecked: !!data.sportsRecreation?.beachVolleyball,
-        tableTennischecked: !!data.sportsRecreation?.tableTennis,
-      };
-
-      // Save Basic Info
-      await createDocument("6741d7f2000200706b21", {
+      // Create basic info document
+      const basicInfoResult = await createDocument("6741d7f2000200706b21", {
         accommodationId,
-        municipality,
-        establishmentName,
-        businessAddress,
-        contactNumber,
-        accreditationNumber,
-        expirationDate,
-        licenseNumber,
-        contactPerson,
-        designation,
-        email,
-        facebook,
-        instagram,
-        twitter,
+        municipality: data.municipality,
+        establishmentName: data.establishmentName,
+        businessAddress: data.businessAddress,
+        contactNumber: data.contactNumber,
+        accreditationNumber: data.accreditationNumber,
+        expirationDate: data.expirationDate,
+        licenseNumber: data.licenseNumber,
+        contactPerson: data.contactPerson,
+        designation: data.designation,
+        email: data.email,
+        facebook: data.facebook,
+        instagram: data.instagram,
+        twitter: data.twitter,
         website: normalizedWebsite,
-        bookingCompany,
+        bookingCompany: data.bookingCompany,
+        status: "Awaiting Inspection",
+        userId,
+        declineReason: "",
       });
 
-      // Save Facilities
+      if (!basicInfoResult) {
+        throw new Error("Failed to create basic info document");
+      }
+
+      // Create facilities document
+      const facilitiesData = {
+        accommodationId,
+        // ... rest of your facilities data
+      };
       await createDocument("6741e31a0022f8e43fb3", facilitiesData);
 
-      // Save Rooms
-      if (data.acRooms || data.fanRooms) {
-        const acRooms = {
+      // Create rooms document if rooms data exists
+      if (data.acRooms?.length || data.fanRooms?.length) {
+        const roomsData = {
+          accommodationId,
+          // AC Rooms - flatten the array into separate fields
           acRoomtype: data.acRooms?.map((room) => room.type || "") || [],
           acRoomnum:
             data.acRooms?.map((room) => parseInt(room.number) || 0) || [],
@@ -205,9 +131,8 @@ export default function TourismForm() {
             data.acRooms?.map((room) => parseFloat(room.rate) || 0.0) || [],
           acRoomamenities:
             data.acRooms?.map((room) => room.amenities || "") || [],
-        };
 
-        const fanRooms = {
+          // Fan Rooms - flatten the array into separate fields
           fanRoomtype: data.fanRooms?.map((room) => room.type || "") || [],
           fanRoomnum:
             data.fanRooms?.map((room) => parseInt(room.number) || 0) || [],
@@ -219,18 +144,18 @@ export default function TourismForm() {
           fanRoomamenities:
             data.fanRooms?.map((room) => room.amenities || "") || [],
         };
-
-        // Combine AC and Fan rooms into a single document
-        await createDocument("6742f65c003e2169aa2b", {
-          accommodationId,
-          ...acRooms,
-          ...fanRooms,
-        });
+        await createDocument("6742f65c003e2169aa2b", roomsData);
       }
 
-      // Save Cottages
-      if (data.acCottages || data.nonAcCottages || data.tents) {
-        const acCottages = {
+      // Create cottages document if cottages data exists
+      if (
+        data.acCottages?.length ||
+        data.nonAcCottages?.length ||
+        data.tents?.length
+      ) {
+        const cottagesData = {
+          accommodationId,
+          // AC Cottages
           acCottagesname:
             data.acCottages?.map((cottage) => cottage.name || "") || [],
           acCottagessize:
@@ -245,9 +170,8 @@ export default function TourismForm() {
             ) || [],
           acCottagesamenities:
             data.acCottages?.map((cottage) => cottage.amenities || "") || [],
-        };
 
-        const nonAcCottages = {
+          // Non-AC Cottages
           nonacCottagesname:
             data.nonAcCottages?.map((cottage) => cottage.name || "") || [],
           nonacCottagessize:
@@ -262,9 +186,8 @@ export default function TourismForm() {
             ) || [],
           nonacCottagesamenities:
             data.nonAcCottages?.map((cottage) => cottage.amenities || "") || [],
-        };
 
-        const tents = {
+          // Tents
           tentsName: data.tents?.map((tent) => tent.name || "") || [],
           tentSize: data.tents?.map((tent) => tent.size || "") || [],
           tentCapacity:
@@ -273,112 +196,35 @@ export default function TourismForm() {
             data.tents?.map((tent) => parseFloat(tent.rate) || 0.0) || [],
           tentAmenities: data.tents?.map((tent) => tent.amenities || "") || [],
         };
-
-        // Combine all cottages and tents data into a single document
-        await createDocument("674342ba0017b324fb03", {
-          accommodationId,
-          ...acCottages,
-          ...nonAcCottages,
-          ...tents,
-        });
+        await createDocument("674342ba0017b324fb03", cottagesData);
       }
 
-      // Save Services
-      if (data) {
-        const servicesData = {
-          accommodationId, // Unique identifier for the accommodation
+      // Create services document
+      const servicesData = {
+        accommodationId,
+        // ... rest of your services data
+      };
+      await createDocument("6743c72d003a2d3b298d", servicesData);
 
-          // Rentals
-          videokeRentalchecked: !!data.videokeRental?.checked,
-          videokeRentalavailabilty:
-            parseInt(data.videokeRental?.availability) || 0,
-          videokeRentalprice: parseFloat(data.videokeRental?.price) || 0.0,
-          atvRentalchecked: !!data.atvRental?.checked,
-          atvRentalavailabilty: parseInt(data.atvRental?.availability) || 0,
-          atvRentalprice: parseFloat(data.atvRental?.price) || 0.0,
-          bicycleRentalchecked: !!data.bicycleRental?.checked,
-          bicycleRentalavailability:
-            parseInt(data.bicycleRental?.availability) || 0,
-          bicycleRentalprice: parseFloat(data.bicycleRental?.price) || 0.0,
-          motorcycleRentalchecked: !!data.motorcycleRental?.checked,
-          motorcycleRentalavailability:
-            parseInt(data.motorcycleRental?.availability) || 0,
-          motorcycleRentalprice:
-            parseFloat(data.motorcycleRental?.price) || 0.0,
+      // Create employees document
+      const employeesData = {
+        accommodationId,
+        localmaleNum: parseInt(data.localmaleNum) || 0,
+        localfemaleNum: parseInt(data.localfemaleNum) || 0,
+        foreignmaleNum: parseInt(data.foreignmaleNum) || 0,
+        foreignfemaleNum: parseInt(data.foreignfemaleNum) || 0,
+      };
+      await createDocument("67432e7e00241eb80e40", employeesData);
 
-          // Common Facilities
-          commonKitchennum: parseInt(data.commonKitchen?.num) || 0,
-          commonKitchencharge: parseFloat(data.commonKitchen?.charge) || 0.0,
-          commonSinknum: parseInt(data.commonSink?.num) || 0,
-          commonSinkcharge: parseFloat(data.commonSink?.charge) || 0.0,
-          commonGrillingsitenum: parseInt(data.commonGrillingSite?.num) || 0,
-          commonGrillingsitecharge:
-            parseFloat(data.commonGrillingSite?.charge) || 0.0,
-          commonBathroomnum: parseInt(data.commonBathroom?.num) || 0,
-          commonBathroomcharge: parseFloat(data.commonBathroom?.charge) || 0.0,
-          commonRestroomnum: parseInt(data.commonRestroom?.num) || 0,
-          commonRestroomcharge: parseFloat(data.commonRestroom?.charge) || 0.0,
-          showernum: parseInt(data.shower?.num) || 0,
-          showercharge: parseFloat(data.shower?.charge) || 0.0,
-
-          // Parking and Campsite
-          parkingcapacity: parseInt(data.parking?.capacity) || 0,
-          parkingprice: parseFloat(data.parking?.price) || 0.0,
-          campsiteAreacapacity: parseInt(data.campsiteArea?.capacity) || 0,
-          campsiteAreaprice: parseFloat(data.campsiteArea?.price) || 0.0,
-
-          // Promotions and Discounts
-          packageschecked: !!data.promotions?.packages?.checked,
-          advanceBookingchecked: !!data.promotions?.advanceBooking?.checked,
-          summerPromochecked: !!data.promotions?.summerPromo?.checked,
-          holidayPromochecked: !!data.promotions?.holidayPromo?.checked,
-          returnClientratechecked: !!data.promotions?.returnClientRate?.checked,
-          corporateRatechecked: !!data.promotions?.corporateRate?.checked,
-          governmentDiscountchecked:
-            !!data.promotions?.governmentDiscount?.checked,
-          seniorDiscountchecked: !!data.promotions?.seniorDiscount?.checked,
-          othersSpecifychecked: !!data.promotions?.othersSpecify?.checked,
-          corporateDiscountamount:
-            parseFloat(data.promotions?.corporateDiscount?.amount) || 0.0,
-          governmentDiscountamount:
-            parseFloat(data.promotions?.governmentDiscount?.amount) || 0.0,
-          seniorDiscountamount:
-            parseFloat(data.promotions?.seniorDiscount?.amount) || 0.0,
-          othersSpecifyDiscountamount:
-            parseFloat(data.promotions?.othersSpecify?.amount) || 0.0,
-        };
-
-        // Save services data
-        await createDocument("6743c72d003a2d3b298d", servicesData);
-      }
-
-      // Save Employees
-      await createDocument("67432e7e00241eb80e40", {
-        accommodationId, // Unique ID for the accommodation
-        localmaleNum: parseInt(data.localmaleNum) || 0, // Number of local male employees
-        localfemaleNum: parseInt(data.localfemaleNum) || 0, // Number of local female employees
-        foreignmaleNum: parseInt(data.foreignmaleNum) || 0, // Number of foreign male employees
-        foreignfemaleNum: parseInt(data.foreignfemaleNum) || 0, // Number of foreign female employees
-      });
-      // After successful submission, navigate to FormStatus with form data
-      router.push({
-        pathname: "/form-status", // Adjust the path to your FormStatus component
-        query: { formData: JSON.stringify(data) }, // Pass the form data as a query parameter
-      });
+      // Success handling
+      sessionStorage.setItem("formSubmitted", "true");
+      toast.success("Form submitted successfully!");
+      router.push("/client");
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast.error(error.message || "Failed to submit form. Please try again.");
     }
   };
-  if (!isAuthorized) {
-    return (
-      <Modal isOpen onClose={handleLogout}>
-        <div>
-          <h2 className="text-lg font-semibold">Access Denied</h2>
-          <p>You do not have permission to access this page.</p>
-        </div>
-      </Modal>
-    );
-  }
 
   // Map the tab order for navigation
   const tabOrder = [
@@ -413,7 +259,12 @@ export default function TourismForm() {
       <div className="container mx-auto py-10">
         <Card>
           <CardHeader>
-            <CardTitle>Tourism Accommodation Inspection Form</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Tourism Accommodation Inspection Form</CardTitle>
+              <Button variant="outline" onClick={() => router.push("/client")}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <form

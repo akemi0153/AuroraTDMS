@@ -1,64 +1,34 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  BarChart,
+  PieChart,
+  Activity,
+  Users,
+  FileText,
+  Settings,
+  LogOut,
+  Menu,
+  Bell,
+  Search,
+  XCircle,
+  Building,
+  CheckCircle,
+  ChevronRight,
+  Sun,
+  Moon,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import toast, { Toaster } from "react-hot-toast";
 import {
   fetchAccommodations,
-  fetchMunicipalityData,
+  createUser,
+  getCurrentUser,
 } from "@/services/appwrite";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Modal from "@/components/modal";
-import { useAuthUserStore } from "@/services/user";
-import { Button } from "@/components/ui/button";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import {
-  XIcon,
-  LogOut,
-  Calendar,
-  Building2,
-  Search,
-  Menu,
-  User,
-  Bell,
-  Settings,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -66,405 +36,463 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addDays } from "date-fns";
+import { Switch } from "@/components/ui/switch";
 
-export default function MunicipalityInspectorDashboard() {
-  const [accommodations, setAccommodations] = useState([]);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedEstablishment, setSelectedEstablishment] = useState(null);
-  const [appointmentDate, setAppointmentDate] = useState(null);
-  const [isAppointmentModalOpen, setAppointmentModalOpen] = useState(false);
+import Overview from "./Overview";
+import Establishments from "./Establishment";
+import UsersPage from "./users";
+import ActivityLogs from "./ActivityLog";
+
+const queryClient = new QueryClient();
+
+export default function AdminDashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMunicipality, setSelectedMunicipality] = useState("All");
+  const [currentPage, setCurrentPage] = useState("overview");
+  const [establishments, setEstablishments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showInspectorModal, setShowInspectorModal] = useState(false);
+  const [inspectorForm, setInspectorForm] = useState({
+    email: "",
+    password: "",
+    name: "",
+    municipality: "",
+  });
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
-  const { authUser, clearAuthUser } = useAuthUserStore();
-  const [municipalityTotals, setMunicipalityTotals] = useState({});
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [approvedEstablishments, setApprovedEstablishments] = useState(0);
+  const [totalEstablishments, setTotalEstablishments] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const calculateTotals = (data) => {
-    const totals = data.reduce((acc, item) => {
-      const municipality = item.municipality;
-      if (!acc[municipality]) {
-        acc[municipality] = 0;
-      }
-      acc[municipality] += 1;
-      return acc;
-    }, {});
-    return totals;
-  };
+  const municipalities = ["Baler", "San Luis", "Maria Aurora", "Dipaculao"];
 
   useEffect(() => {
-    if (!authUser) {
-      setModalOpen(true);
-    } else {
-      setModalOpen(false);
-    }
-  }, [authUser]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
+    const checkAccess = async () => {
       try {
-        const accommodationsData = await fetchAccommodations();
-        setAccommodations(accommodationsData);
-        const totals = calculateTotals(accommodationsData);
-        setMunicipalityTotals(totals);
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+          toast.error("Please log in first");
+          router.push("/login");
+          return;
+        }
+
+        if (currentUser.role !== "admin") {
+          toast.error("Unauthorized access - Admin only area");
+
+          switch (currentUser.role) {
+            case "inspector":
+              switch (currentUser.municipality) {
+                case "Baler":
+                  router.push("/inspector/baler");
+                  break;
+                case "San Luis":
+                  router.push("/inspector/sanluis");
+                  break;
+                case "Maria Aurora":
+                  router.push("/inspector/maria");
+                  break;
+                case "Dipaculao":
+                  router.push("/inspector/dipaculao");
+                  break;
+                default:
+                  router.push("/login");
+              }
+              break;
+            case "user":
+              router.push("/client");
+              break;
+            default:
+              router.push("/login");
+          }
+          return;
+        }
+
+        setIsAuthorized(true);
+        setAuthChecked(true);
+
+        const loadEstablishments = async () => {
+          setIsLoading(true);
+          try {
+            const data = await fetchAccommodations();
+            setEstablishments(data);
+            setTotalEstablishments(data.length);
+            setApprovedEstablishments(
+              data.filter(
+                (e) =>
+                  e.status === "Inspection Complete" ||
+                  e.status === "Inspection Completed"
+              ).length
+            );
+          } catch (error) {
+            toast.error("Failed to load establishments");
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        loadEstablishments();
       } catch (error) {
-        toast.error("Failed to load accommodations.");
-        setAccommodations([]);
-        setMunicipalityTotals({});
-      } finally {
-        setIsLoading(false);
+        toast.error("Authentication error");
+        router.push("/login");
       }
     };
 
-    loadData();
-  }, []);
+    checkAccess();
+  }, [router]);
 
-  const handleLogout = () => {
-    clearAuthUser();
-    toast.success("You have been successfully logged out.");
-    router.push("/login");
-  };
-
-  const handleSetAppointment = (establishment) => {
-    if (establishment) {
-      setSelectedEstablishment(establishment);
-      setAppointmentModalOpen(true);
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
     } else {
-      toast.error("Establishment data is missing.");
+      document.documentElement.classList.remove("dark");
     }
-  };
+  }, [isDarkMode]);
 
-  const handleAppointmentSubmit = () => {
-    if (appointmentDate && appointmentDate >= new Date()) {
-      toast.success(
-        `Appointment set for ${
-          selectedEstablishment.establishmentName
-        } on ${appointmentDate.toLocaleString()}`
-      );
-      setAppointmentModalOpen(false);
-    } else if (appointmentDate < new Date()) {
-      toast.error(
-        "Cannot set an appointment in the past. Please select a future date."
-      );
-    } else {
-      toast.error("Please select a valid date.");
-    }
-  };
-
-  const filteredAccommodations = accommodations.filter(
-    (accommodation) =>
-      (selectedMunicipality === "All" ||
-        accommodation.municipality === selectedMunicipality) &&
-      (accommodation.establishmentName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-        accommodation.municipality
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()))
-  );
-
-  if (!authUser) {
+  if (!authChecked) {
     return (
-      <Modal isOpen={isModalOpen} onClose={handleLogout} title="Login Required">
-        <div className="mt-2">
-          <p>You must be logged in to access this page.</p>
+      <div className="flex h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 dark:border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Checking authorization...
+          </p>
         </div>
-        <div className="mt-5 flex justify-center">
-          <Button onClick={handleLogout}>Close</Button>
-        </div>
-      </Modal>
+      </div>
     );
   }
 
+  if (!isAuthorized) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full">
+          <div className="text-center">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-red-500 mb-2">
+              Unauthorized Access
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              You are not authorized to access the admin dashboard. Redirecting
+              you to the appropriate page...
+            </p>
+            <div className="animate-pulse">
+              <div className="h-2 bg-blue-200 dark:bg-blue-700 rounded w-3/4 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      window.location.href = "/login";
+    }
+  };
+
+  const handleCreateInspector = async (e) => {
+    e.preventDefault();
+    try {
+      await createUser(
+        inspectorForm.email,
+        inspectorForm.password,
+        inspectorForm.name,
+        "inspector",
+        { municipality: inspectorForm.municipality }
+      );
+      toast.success("Inspector account created successfully");
+      setShowInspectorModal(false);
+      setInspectorForm({ email: "", password: "", name: "", municipality: "" });
+    } catch (error) {
+      toast.error(error.message || "Failed to create inspector account");
+    }
+  };
+
+  const renderPage = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 dark:border-blue-400"></div>
+        </div>
+      );
+    }
+
+    switch (currentPage) {
+      case "overview":
+        return (
+          <Overview
+            establishments={establishments}
+            approvedEstablishments={approvedEstablishments}
+            totalEstablishments={totalEstablishments}
+          />
+        );
+      case "establishments":
+        return (
+          <Establishments
+            searchTerm={searchTerm}
+            establishments={establishments}
+          />
+        );
+      case "users":
+        return <UsersPage />;
+      case "activity":
+        return <ActivityLogs />;
+      default:
+        return (
+          <Overview
+            establishments={establishments}
+            approvedEstablishments={approvedEstablishments}
+            totalEstablishments={totalEstablishments}
+          />
+        );
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-gray-100">
-      <aside
-        className={`fixed inset-y-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+    <QueryClientProvider client={queryClient}>
+      <div
+        className={`flex h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200 ${
+          isDarkMode ? "dark" : ""
         }`}
       >
-        <div className="flex h-16 items-center justify-center border-b">
-          <span className="text-xl font-semibold">Inspector Dashboard</span>
-        </div>
-        <nav className="flex-1 overflow-auto py-4">
-          <div className="flex flex-col space-y-1 px-3">
+        {/* Sidebar */}
+        <aside
+          className={`fixed inset-y-0 z-50 flex w-64 flex-col bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex h-16 items-center justify-between px-4 border-b dark:border-gray-700">
+            <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">
+              ADMINISTRATOR
+            </span>
             <Button
               variant="ghost"
-              className={`justify-start ${
-                pathname === "/" ? "bg-gray-100" : ""
-              }`}
-              asChild
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(false)}
             >
-              <Link href="/">
-                <Building2 className="mr-2 h-5 w-5" />
-                Dashboard
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              className={`justify-start ${
-                pathname === "/appointments" ? "bg-gray-100" : ""
-              }`}
-              asChild
-            >
-              <Link href="/appointments">
-                <Calendar className="mr-2 h-5 w-5" />
-                Appointments
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              className={`justify-start ${
-                pathname === "/settings" ? "bg-gray-100" : ""
-              }`}
-              asChild
-            >
-              <Link href="/settings">
-                <Settings className="mr-2 h-5 w-5" />
-                Settings
-              </Link>
+              <XCircle className="h-6 w-6" />
             </Button>
           </div>
-        </nav>
-        <div className="border-t p-4">
-          <Button onClick={handleLogout} variant="outline" className="w-full">
-            <LogOut className="mr-2 h-5 w-5" />
-            Logout
-          </Button>
-        </div>
-      </aside>
-      <main className="flex-1 overflow-auto">
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white px-6 shadow-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-          <div className="flex items-center space-x-4">
-            <form className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="search"
-                placeholder="Search establishments..."
-                className="w-[300px] pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </form>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          <nav className="flex-1 overflow-auto py-4">
+            <div className="flex flex-col space-y-1 px-3">
+              {[
+                { name: "Overview", icon: BarChart },
+                { name: "Establishments", icon: Building },
+                { name: "Users", icon: Users },
+                { name: "Activity", icon: Activity },
+              ].map((item) => (
                 <Button
-                  variant="ghost"
-                  className="relative h-8 w-8 rounded-full"
+                  key={item.name}
+                  variant={
+                    currentPage === item.name.toLowerCase()
+                      ? "default"
+                      : "ghost"
+                  }
+                  className={`justify-start ${
+                    currentPage === item.name.toLowerCase()
+                      ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
+                  onClick={() => setCurrentPage(item.name.toLowerCase())}
                 >
-                  <User className="h-5 w-5" />
+                  <item.icon className="mr-2 h-5 w-5" />
+                  {item.name}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-        <div className="container mx-auto p-6">
-          <h1 className="mb-6 text-3xl font-bold">Municipality Overview</h1>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Establishments
-                </CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-8 w-24 animate-pulse rounded bg-gray-200"></div>
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold">
-                      {accommodations.length}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Across all municipalities
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Municipalities
-                </CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-8 w-24 animate-pulse rounded bg-gray-200"></div>
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold">
-                      {Object.keys(municipalityTotals).length}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      With registered establishments
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Pending Inspections
-                </CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">
-                  Data not available
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Completed Inspections
-                </CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">
-                  Data not available
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="mt-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold">Establishments</h2>
-              <Select
-                value={selectedMunicipality}
-                onValueChange={setSelectedMunicipality}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select Municipality" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Municipalities</SelectItem>
-                  {Object.keys(municipalityTotals).map((municipality) => (
-                    <SelectItem key={municipality} value={municipality}>
-                      {municipality}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              ))}
             </div>
-            <Card className="mt-4">
-              {isLoading ? (
-                <div className="flex h-32 items-center justify-center">
-                  <p>Loading establishments...</p>
-                </div>
-              ) : filteredAccommodations.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Establishment Name</TableHead>
-                      <TableHead>Municipality</TableHead>
-                      <TableHead>Business Address</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAccommodations.map((accommodation) => (
-                      <TableRow key={accommodation.$id}>
-                        <TableCell className="font-medium">
-                          {accommodation.establishmentName}
-                        </TableCell>
-                        <TableCell>{accommodation.municipality}</TableCell>
-                        <TableCell>{accommodation.businessAddress}</TableCell>
-                        <TableCell>
-                          <Button
-                            onClick={() => handleSetAppointment(accommodation)}
-                            size="sm"
-                          >
-                            Set Appointment
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="flex h-32 items-center justify-center">
-                  <p>No establishments found.</p>
-                </div>
-              )}
-            </Card>
-          </div>
-        </div>
-      </main>
-
-      <Sheet
-        open={isAppointmentModalOpen}
-        onOpenChange={setAppointmentModalOpen}
-      >
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>
-              Set Appointment for {selectedEstablishment?.establishmentName}
-            </SheetTitle>
-            <SheetDescription>
-              Choose a date and time for the appointment
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4 space-y-4">
-            <div>
-              <label
-                htmlFor="appointmentDate"
-                className="block text-sm font-medium"
-              >
-                Appointment Date
-              </label>
-              <DatePicker
-                id="appointmentDate"
-                selected={appointmentDate}
-                onChange={(date) => setAppointmentDate(date)}
-                showTimeSelect
-                timeFormat="HH:mm"
-                dateFormat="MMMM d, yyyy h:mm aa"
-                className="mt-1 w-full rounded-md border p-2"
-                placeholderText="Select a date"
-                minDate={new Date()}
-                filterDate={(date) => date >= new Date()}
-              />
-            </div>
-            <Button onClick={handleAppointmentSubmit} className="w-full">
-              Confirm Appointment
+          </nav>
+          <div className="border-t dark:border-gray-700 p-4">
+            <Button variant="outline" className="w-full" onClick={handleLogout}>
+              <LogOut className="mr-2 h-5 w-5" />
+              Logout
             </Button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </aside>
 
-      <ToastContainer />
-    </div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
+          {/* Header */}
+          <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-white dark:bg-gray-800 px-6 shadow-sm transition-colors duration-200">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(!isSidebarOpen)}
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+              <nav className="flex" aria-label="Breadcrumb">
+                <ol className="flex items-center space-x-2">
+                  <li>
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                        Dashboard
+                      </span>
+                    </div>
+                  </li>
+                  <li>
+                    <div className="flex items-center">
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <span className="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                        {currentPage.charAt(0).toUpperCase() +
+                          currentPage.slice(1)}
+                      </span>
+                    </div>
+                  </li>
+                </ol>
+              </nav>
+            </div>
+            <div className="flex items-center space-x-4">
+              {currentPage === "users" && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowInspectorModal(true)}
+                  className="rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-400 dark:hover:bg-blue-800"
+                >
+                  Create Inspector Account
+                </Button>
+              )}
+              <div className="flex items-center space-x-2">
+                <Sun className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
+                <Switch
+                  checked={isDarkMode}
+                  onCheckedChange={setIsDarkMode}
+                  className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-200"
+                />
+                <Moon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </header>
+
+          {/* Inspector Modal */}
+          {showInspectorModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 shadow-xl">
+                <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
+                  Create Inspector Account
+                </h2>
+                <form onSubmit={handleCreateInspector} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Name
+                    </label>
+                    <Input
+                      type="text"
+                      value={inspectorForm.name}
+                      onChange={(e) =>
+                        setInspectorForm((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Email
+                    </label>
+                    <Input
+                      type="email"
+                      value={inspectorForm.email}
+                      onChange={(e) =>
+                        setInspectorForm((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Password
+                    </label>
+                    <Input
+                      type="password"
+                      value={inspectorForm.password}
+                      onChange={(e) =>
+                        setInspectorForm((prev) => ({
+                          ...prev,
+                          password: e.target.value,
+                        }))
+                      }
+                      required
+                      minLength={8}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Municipality
+                    </label>
+                    <Select
+                      value={inspectorForm.municipality}
+                      onValueChange={(value) =>
+                        setInspectorForm((prev) => ({
+                          ...prev,
+                          municipality: value,
+                        }))
+                      }
+                      required
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select municipality" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {municipalities.map((municipality) => (
+                          <SelectItem key={municipality} value={municipality}>
+                            {municipality}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                      Role
+                    </label>
+                    <Input
+                      type="text"
+                      value="Inspector"
+                      disabled
+                      className="w-full bg-gray-100 dark:bg-gray-700"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2 mt-6">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowInspectorModal(false)}
+                      className="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                    >
+                      Create Inspector
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Page Content */}
+          <div className="p-6">{renderPage()}</div>
+        </main>
+
+        <Toaster />
+      </div>
+    </QueryClientProvider>
   );
 }

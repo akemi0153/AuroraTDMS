@@ -1,249 +1,178 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useFieldArray } from "react-hook-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { X } from 'lucide-react'
 
 export default function Facilities() {
-  const { register } = useFormContext();
+  const { register, control } = useFormContext();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "marineRecreation"
+  });
+
+  const marineActivities = [
+    "Kayaking",
+    "Board Surfing",
+    "Snorkeling",
+    "Paddle Boarding",
+    "Scuba Diving",
+    "Free Diving",
+    "Kite Surfing",
+    "Banana Boat",
+  ];
 
   return (
-    <TabsContent value="facilities" className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-4">
-          <h3 className="font-medium">Dining Outlets</h3>
-          <div className="space-y-4">
-            <div className="border p-4 rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
+    <TabsContent value="facilities" className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Dining Outlets</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {["restaurant", "bar", "coffeeShop"].map((outlet) => (
+            <div key={outlet} className="space-y-2">
+              <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="restaurant"
-                  {...register("diningOutlets.restaurant.checked")}
+                  id={outlet}
+                  {...register(`diningOutlets.${outlet}.checked`)}
                 />
-                <label htmlFor="restaurant" className="text-sm font-medium">
-                  Restaurant
+                <label htmlFor={outlet} className="text-sm font-medium">
+                  {outlet.charAt(0).toUpperCase() + outlet.slice(1)}
                 </label>
               </div>
               <Input
                 type="number"
                 placeholder="Capacity"
-                {...register("diningOutlets.restaurant.capacity")}
-                className="mt-2"
+                {...register(`diningOutlets.${outlet}.capacity`)}
               />
             </div>
+          ))}
+        </CardContent>
+      </Card>
 
-            <div className="border p-4 rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
-                <Checkbox id="bar" {...register("diningOutlets.bar.checked")} />
-                <label htmlFor="bar" className="text-sm font-medium">
-                  Bar/Cocktail Lounge
-                </label>
-              </div>
-              <Input
-                type="number"
-                placeholder="Capacity"
-                {...register("diningOutlets.bar.capacity")}
-                className="mt-2"
-              />
-            </div>
-
-            <div className="border p-4 rounded-lg">
-              <div className="flex items-center space-x-2 mb-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Conference/Convention</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {["conventionHall", "conferenceHall", "functionHall", "meetingRoom"].map((facility) => (
+            <div key={facility} className="space-y-2">
+              <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="coffeeShop"
-                  {...register("diningOutlets.coffeeShop.checked")}
+                  id={facility}
+                  {...register(`conferenceConvention.${facility}.checked`)}
                 />
-                <label htmlFor="coffeeShop" className="text-sm font-medium">
-                  Coffee Shop
+                <label htmlFor={facility} className="text-sm font-medium">
+                  {facility.split(/(?=[A-Z])/).join(" ")}
                 </label>
               </div>
-              <Input
-                type="number"
-                placeholder="Capacity"
-                {...register("diningOutlets.coffeeShop.capacity")}
-                className="mt-2"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="font-medium">Conference/Convention</h3>
-          <div className="space-y-4">
-            {[
-              "conventionHall",
-              "conferenceHall",
-              "functionHall",
-              "meetingRoom",
-            ].map((facility) => (
-              <div key={facility} className="border p-4 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Checkbox
-                    id={facility}
-                    {...register(`conferenceConvention.${facility}.checked`)}
-                  />
-                  <label htmlFor={facility} className="text-sm font-medium">
-                    {facility.split(/(?=[A-Z])/).join(" ")}
-                  </label>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Capacity"
-                    {...register(`conferenceConvention.${facility}.capacity`)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="AC Price"
-                    {...register(`conferenceConvention.${facility}.acPrice`)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Non-AC Price"
-                    {...register(`conferenceConvention.${facility}.nonAcPrice`)}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="font-medium">Marine Recreation</h3>
-          <div className="space-y-4">
-            {[
-              "kayaking",
-              "boardSurfing",
-              "snorkeling",
-              "paddleBoarding",
-              "scubaDiving",
-              "freeDiving",
-              "kiteSurfing",
-              "bananaBoat",
-            ].map((activity) => (
-              <div key={activity} className="border p-4 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Checkbox
-                    id={activity}
-                    {...register(`marineRecreation.${activity}.checked`)}
-                  />
-                  <label htmlFor={activity} className="text-sm font-medium">
-                    {activity.split(/(?=[A-Z])/).join(" ")}
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Number of Equipment"
-                    {...register(`marineRecreation.${activity}.quantity`)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Price per Hour"
-                    {...register(`marineRecreation.${activity}.price`)}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="font-medium">Sports Recreation</h3>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="basketballCourt"
-              {...register("sportsRecreation.basketballCourt")}
-            />
-            <label
-              htmlFor="basketballCourt"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Basketball Court
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tennisCourt"
-              {...register("sportsRecreation.tennisCourt")}
-            />
-            <label
-              htmlFor="tennisCourt"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Tennis Court
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="badmintonCourt"
-              {...register("sportsRecreation.badmintonCourt")}
-            />
-            <label
-              htmlFor="badmintonCourt"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Badminton Court
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="volleyballCourt"
-              {...register("sportsRecreation.volleyballCourt")}
-            />
-            <label
-              htmlFor="volleyballCourt"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Volleyball Court
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="beachVolleyball"
-              {...register("sportsRecreation.beachVolleyball")}
-            />
-            <label
-              htmlFor="beachVolleyball"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Beach Volleyball
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tableTennis"
-              {...register("sportsRecreation.tableTennis")}
-            />
-            <label
-              htmlFor="tableTennis"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Table Tennis
-            </label>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <h3 className="font-medium">Swimming Pools</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-sm font-medium mb-2">Adult Pool</h4>
-              <div className="space-y-2">
-                <Input placeholder="Depth" {...register("adultPool.depth")} />
-                <Input placeholder="Size" {...register("adultPool.size")} />
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium mb-2">Childrens Pool</h4>
-              <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Input
-                  placeholder="Depth"
-                  {...register("childrenPool.depth")}
+                  type="number"
+                  placeholder="Capacity"
+                  {...register(`conferenceConvention.${facility}.capacity`)}
                 />
-                <Input placeholder="Size" {...register("childrenPool.size")} />
+                <Input
+                  type="number"
+                  placeholder="AC Price"
+                  {...register(`conferenceConvention.${facility}.acPrice`)}
+                />
+                <Input
+                  type="number"
+                  placeholder="Non-AC Price"
+                  {...register(`conferenceConvention.${facility}.nonAcPrice`)}
+                />
               </div>
             </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Marine Recreation</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {marineActivities.map((activity) => (
+              <Button
+                key={activity}
+                variant="outline"
+                size="sm"
+                onClick={() => append({ activity, quantity: "", price: "" })}
+                type="button"
+              >
+                {activity}
+              </Button>
+            ))}
           </div>
-        </div>
-      </div>
+          {fields.map((field, index) => (
+            <div key={field.id} className="flex items-center space-x-2">
+              <Input
+                {...register(`marineRecreation.${index}.activity`)}
+                defaultValue={field.activity}
+                readOnly
+              />
+              <Input
+                type="number"
+                placeholder="Quantity"
+                {...register(`marineRecreation.${index}.quantity`)}
+              />
+              <Input
+                type="number"
+                placeholder="Price per Hour"
+                {...register(`marineRecreation.${index}.price`)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => remove(index)}
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Remove {field.activity}</span>
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sports Recreation</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {["basketballCourt", "tennisCourt", "badmintonCourt", "volleyballCourt", "beachVolleyball", "tableTennis"].map((sport) => (
+            <div key={sport} className="flex items-center space-x-2">
+              <Checkbox
+                id={sport}
+                {...register(`sportsRecreation.${sport}`)}
+              />
+              <label htmlFor={sport} className="text-sm font-medium">
+                {sport.split(/(?=[A-Z])/).join(" ")}
+              </label>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Swimming Pools</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {["adultPool", "childrenPool"].map((pool) => (
+            <div key={pool} className="space-y-2">
+              <h4 className="text-sm font-medium">{pool.split(/(?=[A-Z])/).join(" ")}</h4>
+              <Input placeholder="Depth" {...register(`${pool}.depth`)} />
+              <Input placeholder="Size" {...register(`${pool}.size`)} />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </TabsContent>
   );
 }
+
