@@ -973,17 +973,130 @@ export default function BalerPage() {
                   <p>Loading services...</p>
                 ) : viewServices.length > 0 ? (
                   viewServices.map((service, index) => (
-                    <div key={index} className="mb-2">
-                      <strong>Videoke Rental:</strong>{" "}
-                      {service.videokeRentalchecked
-                        ? "Available"
-                        : "Not Available"}
-                      <br />
-                      <strong>ATV Rental Price:</strong>{" "}
-                      {service.atvRentalprice}
-                      <br />
-                      <strong>Bicycle Rental Availability:</strong>{" "}
-                      {service.bicycleRentalavailability}
+                    <div
+                      key={index}
+                      className="mb-4 p-4 border rounded-lg bg-white"
+                    >
+                      <h3 className="font-bold mb-2 text-lg">
+                        Rental Services
+                      </h3>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold mb-2">Videoke Rental</h4>
+                          <p>
+                            Available:{" "}
+                            {service.videokeRentalchecked ? "Yes" : "No"}
+                          </p>
+                          <p>Price: ₱{service.videokeRentalprice || "N/A"}</p>
+                        </div>
+
+                        <div>
+                          <h4 className="font-semibold mb-2">ATV Rental</h4>
+                          <p>
+                            Available: {service.atvRentalchecked ? "Yes" : "No"}
+                          </p>
+                          <p>Price: ₱{service.atvRentalprice || "N/A"}</p>
+                        </div>
+
+                        <div>
+                          <h4 className="font-semibold mb-2">Bicycle Rental</h4>
+                          <p>
+                            Available:{" "}
+                            {service.bicycleRentalchecked ? "Yes" : "No"}
+                          </p>
+                          <p>Price: ₱{service.bicycleRentalprice || "N/A"}</p>
+                        </div>
+
+                        <div>
+                          <h4 className="font-semibold mb-2">
+                            Motorcycle Rental
+                          </h4>
+                          <p>
+                            Available:{" "}
+                            {service.motorcycleRentalchecked ? "Yes" : "No"}
+                          </p>
+                          <p>
+                            Price: ₱{service.motorcycleRentalprice || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold mt-4 mb-2 text-lg">
+                        Common Facilities
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p>
+                            <strong>Kitchen:</strong>{" "}
+                            {service.commonKitchennum || 0} units (₱
+                            {service.commonKitchencharge || 0})
+                          </p>
+                          <p>
+                            <strong>Sink:</strong> {service.commonSinknum || 0}{" "}
+                            units (₱{service.commonSinkcharge || 0})
+                          </p>
+                          <p>
+                            <strong>Grilling Site:</strong>{" "}
+                            {service.commonGrillingsitenum || 0} units (₱
+                            {service.commonGrillingsitecharge || 0})
+                          </p>
+                        </div>
+                        <div>
+                          <p>
+                            <strong>Bathroom:</strong>{" "}
+                            {service.commonBathroomnum || 0} units (₱
+                            {service.commonBathroomcharge || 0})
+                          </p>
+                          <p>
+                            <strong>Restroom:</strong>{" "}
+                            {service.commonRestroomnum || 0} units (₱
+                            {service.commonRestroomcharge || 0})
+                          </p>
+                          <p>
+                            <strong>Shower:</strong> {service.showernum || 0}{" "}
+                            units (₱{service.showercharge || 0})
+                          </p>
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold mt-4 mb-2 text-lg">
+                        Other Amenities
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p>
+                            <strong>Parking:</strong>{" "}
+                            {service.parkingcapacity || 0} vehicles (₱
+                            {service.parkingprice || 0})
+                          </p>
+                          <p>
+                            <strong>Campsite Area:</strong>{" "}
+                            {service.campsiteAreacapacity || 0} capacity (₱
+                            {service.campsiteAreaprice || 0})
+                          </p>
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold mt-4 mb-2 text-lg">
+                        Discounts Available
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p>
+                            <strong>Corporate:</strong>{" "}
+                            {service.corporateDiscountamount || 0}%
+                          </p>
+                          <p>
+                            <strong>Government:</strong>{" "}
+                            {service.governmentDiscountamount || 0}%
+                          </p>
+                          <p>
+                            <strong>Senior Citizen:</strong>{" "}
+                            {service.seniorDiscountamount || 0}%
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -997,10 +1110,62 @@ export default function BalerPage() {
                   <p>Loading rooms...</p>
                 ) : viewRooms.length > 0 ? (
                   viewRooms.map((room, index) => (
-                    <div key={index} className="mb-2">
-                      <strong>Room Type:</strong> {room.type}
-                      <br />
-                      <strong>Capacity:</strong> {room.capacity}
+                    <div
+                      key={index}
+                      className="mb-4 p-4 border rounded-lg bg-white"
+                    >
+                      <div className="grid grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="font-bold mb-2 text-lg">AC Rooms</h3>
+                          <p>
+                            <strong>Type:</strong> {room.acRoomtype || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Number of Rooms:</strong>{" "}
+                            {room.acRoomnum || 0}
+                          </p>
+                          <p>
+                            <strong>Bed Type:</strong> {room.acBedtype || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Capacity:</strong>{" "}
+                            {room.acRoomcapacity || 0} persons
+                          </p>
+                          <p>
+                            <strong>Rate:</strong> ₱{room.acRoomrate || 0}
+                          </p>
+                          <p>
+                            <strong>Amenities:</strong>{" "}
+                            {room.acRoomamenities || "N/A"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h3 className="font-bold mb-2 text-lg">Fan Rooms</h3>
+                          <p>
+                            <strong>Type:</strong> {room.fanRoomtype || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Number of Rooms:</strong>{" "}
+                            {room.fanRoomnum || 0}
+                          </p>
+                          <p>
+                            <strong>Bed Type:</strong>{" "}
+                            {room.fanBedtype || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Capacity:</strong>{" "}
+                            {room.fanRoomcapacity || 0} persons
+                          </p>
+                          <p>
+                            <strong>Rate:</strong> ₱{room.fanRoomrate || 0}
+                          </p>
+                          <p>
+                            <strong>Amenities:</strong>{" "}
+                            {room.fanRoomamenities || "N/A"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -1014,10 +1179,84 @@ export default function BalerPage() {
                   <p>Loading cottages...</p>
                 ) : viewCottages.length > 0 ? (
                   viewCottages.map((cottage, index) => (
-                    <div key={index} className="mb-2">
-                      <strong>Cottage Name:</strong> {cottage.name}
-                      <br />
-                      <strong>Features:</strong> {cottage.features}
+                    <div
+                      key={index}
+                      className="mb-4 p-4 border rounded-lg bg-white"
+                    >
+                      <div className="grid grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="font-bold mb-2 text-lg">
+                            AC Cottages
+                          </h3>
+                          <p>
+                            <strong>Name:</strong>{" "}
+                            {cottage.acCottagesname || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Size:</strong>{" "}
+                            {cottage.acCottagessize || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Capacity:</strong>{" "}
+                            {cottage.acCottagescapacity || 0} persons
+                          </p>
+                          <p>
+                            <strong>Rate:</strong> ₱
+                            {cottage.acCottagesrate || 0}
+                          </p>
+                          <p>
+                            <strong>Amenities:</strong>{" "}
+                            {cottage.acCottagesamenities || "N/A"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h3 className="font-bold mb-2 text-lg">
+                            Non-AC Cottages
+                          </h3>
+                          <p>
+                            <strong>Name:</strong>{" "}
+                            {cottage.nonacCottagesname || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Size:</strong>{" "}
+                            {cottage.nonacCottagessize || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Capacity:</strong>{" "}
+                            {cottage.nonacCottagescapacity || 0} persons
+                          </p>
+                          <p>
+                            <strong>Rate:</strong> ₱
+                            {cottage.nonacCottagesrate || 0}
+                          </p>
+                          <p>
+                            <strong>Amenities:</strong>{" "}
+                            {cottage.nonacCottagesamenities || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <h3 className="font-bold mb-2 text-lg">Tents</h3>
+                        <p>
+                          <strong>Name:</strong> {cottage.tentsName || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Size:</strong> {cottage.tentSize || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Capacity:</strong> {cottage.tentCapacity || 0}{" "}
+                          persons
+                        </p>
+                        <p>
+                          <strong>Rate:</strong> ₱{cottage.tentRate || 0}
+                        </p>
+                        <p>
+                          <strong>Amenities:</strong>{" "}
+                          {cottage.tentAmenities || "N/A"}
+                        </p>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -1031,10 +1270,127 @@ export default function BalerPage() {
                   <p>Loading facilities...</p>
                 ) : viewFacilities.length > 0 ? (
                   viewFacilities.map((facility, index) => (
-                    <div key={index} className="mb-2">
-                      <strong>Facility Name:</strong> {facility.name}
-                      <br />
-                      <strong>Type:</strong> {facility.type}
+                    <div
+                      key={index}
+                      className="mb-4 p-4 border rounded-lg bg-white"
+                    >
+                      <div className="grid grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="font-bold mb-2 text-lg">
+                            Dining & Events
+                          </h3>
+                          <p>
+                            <strong>Dining Outlets:</strong>{" "}
+                            {facility.diningOutletschecked
+                              ? `Yes (${facility.diningOutletscapacity} capacity)`
+                              : "No"}
+                          </p>
+                          <p>
+                            <strong>Bar:</strong>{" "}
+                            {facility.barchecked
+                              ? `Yes (${facility.barcapacity} capacity)`
+                              : "No"}
+                          </p>
+                          <p>
+                            <strong>Coffee Shop:</strong>{" "}
+                            {facility.coffeeShopchecked
+                              ? `Yes (${facility.coffeeShopcapacity} capacity)`
+                              : "No"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <h3 className="font-bold mb-2 text-lg">
+                            Event Spaces
+                          </h3>
+                          <p>
+                            <strong>Convention Hall:</strong>{" "}
+                            {facility.conventionHallchecked
+                              ? `Yes (${facility.conventionHallcapacity} capacity) - AC: ₱${facility.conventionHallacprice}, Non-AC: ₱${facility.conventionHallnonacprice}`
+                              : "No"}
+                          </p>
+                          <p>
+                            <strong>Function Hall:</strong>{" "}
+                            {facility.functionHallchecked
+                              ? `Yes (${facility.functionHallcapacity} capacity) - AC: ₱${facility.functionHallacprice}, Non-AC: ₱${facility.functionHallnonacprice}`
+                              : "No"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <h3 className="font-bold mb-2 text-lg">
+                          Water Activities
+                        </h3>
+                        <div className="grid grid-cols-3 gap-4">
+                          <p>
+                            <strong>Kayaking:</strong>{" "}
+                            {facility.kayakingchecked
+                              ? `${facility.kayakingNum} units - ₱${facility.kayakingprice}`
+                              : "No"}
+                          </p>
+                          <p>
+                            <strong>Board Surfing:</strong>{" "}
+                            {facility.boardSurfingchecked
+                              ? `${facility.boardSurfingNum} units - ₱${facility.boardSurfingprice}`
+                              : "No"}
+                          </p>
+                          <p>
+                            <strong>Snorkeling:</strong>{" "}
+                            {facility.snorkelingchecked
+                              ? `${facility.snorkelingNum} units - ₱${facility.snorkelingprice}`
+                              : "No"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <h3 className="font-bold mb-2 text-lg">
+                          Swimming Pools
+                        </h3>
+                        <p>
+                          <strong>Adult Pool:</strong> Depth:{" "}
+                          {facility.adultPooldepth}m, Size:{" "}
+                          {facility.adultPoolsize}
+                        </p>
+                        <p>
+                          <strong>Children's Pool:</strong> Depth:{" "}
+                          {facility.childrensPooldepth}m, Size:{" "}
+                          {facility.childrensPoolsize}
+                        </p>
+                      </div>
+
+                      <div className="mt-4">
+                        <h3 className="font-bold mb-2 text-lg">
+                          Sports Facilities
+                        </h3>
+                        <div className="grid grid-cols-3 gap-4">
+                          <p>
+                            <strong>Basketball Court:</strong>{" "}
+                            {facility.basketballCourtchecked ? "Yes" : "No"}
+                          </p>
+                          <p>
+                            <strong>Tennis Court:</strong>{" "}
+                            {facility.tennisCourtchecked ? "Yes" : "No"}
+                          </p>
+                          <p>
+                            <strong>Badminton Court:</strong>{" "}
+                            {facility.badmintonCourtchecked ? "Yes" : "No"}
+                          </p>
+                          <p>
+                            <strong>Volleyball Court:</strong>{" "}
+                            {facility.volleyballCourtchecked ? "Yes" : "No"}
+                          </p>
+                          <p>
+                            <strong>Beach Volleyball:</strong>{" "}
+                            {facility.beachVolleyballchecked ? "Yes" : "No"}
+                          </p>
+                          <p>
+                            <strong>Table Tennis:</strong>{" "}
+                            {facility.tableTennischecked ? "Yes" : "No"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -1048,14 +1404,53 @@ export default function BalerPage() {
                   <p>Loading employees...</p>
                 ) : viewEmployees.length > 0 ? (
                   viewEmployees.map((employee, index) => (
-                    <div key={index} className="mb-2">
-                      <strong>Employee Name:</strong> {employee.name}
-                      <br />
-                      <strong>Position:</strong> {employee.position}
+                    <div
+                      key={index}
+                      className="mb-4 p-4 border rounded-lg bg-white"
+                    >
+                      <h3 className="font-bold mb-2 text-lg">
+                        Employee Statistics
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold mb-2">
+                            Local Employees
+                          </h4>
+                          <p>
+                            <strong>Male:</strong> {employee.localmaleNum || 0}
+                          </p>
+                          <p>
+                            <strong>Female:</strong>{" "}
+                            {employee.localfemaleNum || 0}
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">
+                            Foreign Employees
+                          </h4>
+                          <p>
+                            <strong>Male:</strong>{" "}
+                            {employee.foreignmaleNum || 0}
+                          </p>
+                          <p>
+                            <strong>Female:</strong>{" "}
+                            {employee.foreignfemaleNum || 0}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <p>
+                          <strong>Total Employees:</strong>{" "}
+                          {(employee.localmaleNum || 0) +
+                            (employee.localfemaleNum || 0) +
+                            (employee.foreignmaleNum || 0) +
+                            (employee.foreignfemaleNum || 0)}
+                        </p>
+                      </div>
                     </div>
                   ))
                 ) : (
-                  <p>No employees found.</p>
+                  <p>No employee data found.</p>
                 )}
               </ScrollArea>
             </TabsContent>

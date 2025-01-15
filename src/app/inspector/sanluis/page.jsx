@@ -501,9 +501,9 @@ export default function SanLuisPage() {
     </ResponsiveContainer>
   );
 
-  const renderCardContent = (title, icon, data, color, sparklineColor) => (
+  const renderCardContent = (title, icon, data, bgColor, sparklineColor) => (
     <Card
-      className={`bg-${color} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
+      className={`${bgColor} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -513,18 +513,14 @@ export default function SanLuisPage() {
         <div className="text-2xl font-bold">{data.count}</div>
         <div className="flex items-center text-xs mt-1">
           {data.change > 0 ? (
-            <ArrowUpRight className="mr-1 h-3 w-3 text-green-300" />
+            <ArrowUpRight className="mr-1 h-3 w-3 text-white opacity-80" />
           ) : (
-            <ArrowDownRight className="mr-1 h-3 w-3 text-red-300" />
+            <ArrowDownRight className="mr-1 h-3 w-3 text-white opacity-80" />
           )}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span
-                  className={
-                    data.change > 0 ? "text-green-300" : "text-red-300"
-                  }
-                >
+                <span className="text-white opacity-80">
                   {Math.abs(data.change)}% from last period
                 </span>
               </TooltipTrigger>
