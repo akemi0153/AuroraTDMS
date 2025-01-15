@@ -521,7 +521,9 @@ export default function SanLuisPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <span
-                  className={data.change > 0 ? "text-green-300" : "text-red-300"}
+                  className={
+                    data.change > 0 ? "text-green-300" : "text-red-300"
+                  }
                 >
                   {Math.abs(data.change)}% from last period
                 </span>
@@ -693,8 +695,8 @@ export default function SanLuisPage() {
                     "Total Establishments",
                     <Users className="h-8 w-8" />,
                     analyticsData.total,
-                    "indigo-600",
-                    "#ffffff"
+                    "bg-blue-600",
+                    "#E3F2FD"
                   )}
                 </motion.div>
                 <motion.div
@@ -709,8 +711,8 @@ export default function SanLuisPage() {
                       ...analyticsData.awaitingInspection,
                       trend: generateTrend("awaiting"),
                     },
-                    "yellow-500",
-                    "#ffffff"
+                    "bg-amber-500",
+                    "#FFF8E1"
                   )}
                 </motion.div>
                 <motion.div
@@ -725,8 +727,8 @@ export default function SanLuisPage() {
                       ...analyticsData.inspectionComplete,
                       trend: generateTrend("complete"),
                     },
-                    "green-500",
-                    "#ffffff"
+                    "bg-emerald-500",
+                    "#E8F5E9"
                   )}
                 </motion.div>
                 <motion.div
@@ -741,8 +743,8 @@ export default function SanLuisPage() {
                       ...analyticsData.requiresFollowUp,
                       trend: generateTrend("followup"),
                     },
-                    "red-500",
-                    "#ffffff"
+                    "bg-rose-500",
+                    "#FFF5F5"
                   )}
                 </motion.div>
               </motion.div>

@@ -499,9 +499,9 @@ export default function DipaculaoPage() {
     </ResponsiveContainer>
   );
 
-  const renderCardContent = (title, icon, data, color, sparklineColor) => (
+  const renderCardContent = (title, icon, data, bgColor, sparklineColor) => (
     <Card
-      className={`bg-${color} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
+      className={`${bgColor} text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -693,8 +693,8 @@ export default function DipaculaoPage() {
                     "Total Establishments",
                     <Users className="h-8 w-8" />,
                     analyticsData.total,
-                    "purple-600",
-                    "#ffffff"
+                    "bg-blue-600",
+                    "#E3F2FD"
                   )}
                 </motion.div>
                 <motion.div
@@ -709,8 +709,8 @@ export default function DipaculaoPage() {
                       ...analyticsData.awaitingInspection,
                       trend: generateTrend("awaiting"),
                     },
-                    "yellow-500",
-                    "#ffffff"
+                    "bg-amber-500",
+                    "#FFF8E1"
                   )}
                 </motion.div>
                 <motion.div
@@ -725,8 +725,8 @@ export default function DipaculaoPage() {
                       ...analyticsData.inspectionComplete,
                       trend: generateTrend("complete"),
                     },
-                    "green-500",
-                    "#ffffff"
+                    "bg-emerald-500",
+                    "#E8F5E9"
                   )}
                 </motion.div>
                 <motion.div
@@ -741,8 +741,8 @@ export default function DipaculaoPage() {
                       ...analyticsData.requiresFollowUp,
                       trend: generateTrend("followup"),
                     },
-                    "red-500",
-                    "#ffffff"
+                    "bg-rose-500",
+                    "#FFF5F5"
                   )}
                 </motion.div>
               </motion.div>
