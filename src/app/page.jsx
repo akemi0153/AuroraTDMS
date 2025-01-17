@@ -613,7 +613,7 @@ export default function CATMS() {
           <div className="relative w-full max-w-4xl bg-white rounded-lg shadow-lg">
             <div className="aspect-video">
               <video
-                src="/videos/demo.mp4"
+                src="/video/demo.mp4"
                 controls
                 className="w-full h-full rounded-lg"
                 title="Demo Video"
