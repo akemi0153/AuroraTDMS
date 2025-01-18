@@ -38,7 +38,7 @@ const images = [
   "/image/caption.png",
 ];
 
-export default function CATMS() {
+export default function CATDMS() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -153,13 +153,13 @@ export default function CATMS() {
     },
     {
       question:
-        "How does C.A.T.M.S address the unique needs of Central Aurora's tourism industry?",
+        "How does CATDMS address the unique needs of Central Aurora's tourism industry?",
       answer: (
         <div className="space-y-4 text-justify">
           <p>
-            C.A.T.M.S is specifically designed to meet the unique requirements
-            of Central Aurora's diverse tourism landscape. It incorporates both
-            DOT (Department of Tourism) Standard Regulations and Local Standard
+            CATDMS is specifically designed to meet the unique requirements of
+            Central Aurora's diverse tourism landscape. It incorporates both DOT
+            (Department of Tourism) Standard Regulations and Local Standard
             Regulations:
           </p>
           <ol className="list-decimal pl-5 space-y-2">
@@ -172,11 +172,11 @@ export default function CATMS() {
               food production areas, and guest services.
             </li>
             <li>
-              <span className="font-semibold">Local Regulations:</span>{" "}
-              C.A.T.M.S integrates Central Aurora's specific local ordinances
-              and regulations, such as environmental protection measures for
-              coastal properties and cultural preservation guidelines for
-              heritage sites.
+              <span className="font-semibold">Local Regulations:</span> CATDMS
+              integrates Central Aurora's specific local ordinances and
+              regulations, such as environmental protection measures for coastal
+              properties and cultural preservation guidelines for heritage
+              sites.
             </li>
             <li>
               <span className="font-semibold">Customized Checklists:</span> The
@@ -192,11 +192,11 @@ export default function CATMS() {
               peak and off-peak seasons.
             </li>
             <li>
-              <span className="font-semibold">Local Collaboration:</span>{" "}
-              C.A.T.M.S facilitates seamless cooperation between local
-              government units, property owners, and the Provincial Tourism
-              Office, ensuring a unified approach to maintaining and improving
-              accommodation standards across Central Aurora.
+              <span className="font-semibold">Local Collaboration:</span> CATDMS
+              facilitates seamless cooperation between local government units,
+              property owners, and the Provincial Tourism Office, ensuring a
+              unified approach to maintaining and improving accommodation
+              standards across Central Aurora.
             </li>
             <li>
               <span className="font-semibold">
@@ -208,7 +208,7 @@ export default function CATMS() {
             </li>
           </ol>
           <p>
-            By addressing these specific needs, C.A.T.M.S not only ensures
+            By addressing these specific needs, CATDMS not only ensures
             regulatory compliance but also contributes to the overall
             improvement of Central Aurora's tourism industry, enhancing guest
             experiences and supporting the region's reputation as a top-tier
@@ -273,13 +273,13 @@ export default function CATMS() {
                 transition={{ duration: 0.5 }}
               >
                 <h1 className="text-4xl md:text-5xl font-bold text-sky-100 mb-4">
-                  Central Aurora Tourism Management System
+                  Central Aurora Tourism Digital Management System
                 </h1>
                 <p className="text-xl text-sky-200 mb-6">
-                  C.A.T.M.S: Your all-in-one solution for efficient,
-                  transparent, and standardized accommodation inspections.
-                  Empower your team to maintain world-class standards and
-                  enhance guest satisfaction.
+                  CATDMS Your all-in-one solution for efficient, transparent,
+                  and standardized accommodation inspections. Empower your team
+                  to maintain world-class standards and enhance guest
+                  satisfaction.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
@@ -331,7 +331,7 @@ export default function CATMS() {
         <section id="features" className="py-20 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12 text-teal-800">
-              Why Choose C.A.T.M.S?
+              Why Choose CATDMS?
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {features.map((feature, index) => (
@@ -501,10 +501,10 @@ export default function CATMS() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <h3 className="text-lg font-semibold mb-4">
-                About Central Aurora Tourism Management System
+                About Central Aurora Tourism Digital Management System
               </h3>
               <p className="text-sm">
-                C.A.T.M.S is the leading accommodation inspection management
+                CATDMS is the leading accommodation inspection management
                 system, streamlining quality control processes for hotels,
                 resorts, and vacation rentals worldwide. Our mission is to
                 elevate hospitality standards and enhance guest experiences
@@ -547,7 +547,7 @@ export default function CATMS() {
           </div>
           <div className="mt-8 pt-8 border-t border-gray-700 text-center">
             <p className="text-sm">
-              &copy; {new Date().getFullYear()} C.A.T.M.S. All rights reserved.
+              &copy; {new Date().getFullYear()} CATDMS All rights reserved.
               Develop by クリスチャン ジョセフ マリグメン.
             </p>
           </div>
