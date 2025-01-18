@@ -151,7 +151,7 @@ const Profile = () => {
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
-          <User className="h-12 w-12 text-indigo-600" />
+          <div className="h-12 w-12 border-4 border-t-4 border-indigo-600 border-t-transparent rounded-full"></div>
         </motion.div>
       </div>
     );

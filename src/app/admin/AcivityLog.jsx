@@ -13,7 +13,8 @@ import { RefreshCw, Search, Download } from "lucide-react";
 import { fetchActivityLogs, getCurrentUser } from "@/services/appwrite";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 const ActivityLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -47,7 +48,7 @@ const ActivityLogs = () => {
     loadLogs();
   }, []);
 
-  const generateReport = () => {
+  const generateReport = async () => {
     try {
       // Group establishments by municipality
       const municipalityData = logs.reduce((acc, log) => {
@@ -169,16 +170,24 @@ const ActivityLogs = () => {
         ],
       ];
 
-      // Create worksheet
-      const ws = XLSX.utils.aoa_to_sheet(reportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Establishments Report");
+      // Create workbook and worksheet
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Establishments Report");
+
+      // Add data to worksheet
+      reportData.forEach((row) => {
+        worksheet.addRow(row);
+      });
 
       // Generate & Download Excel file
-      XLSX.writeFile(
-        wb,
-        `Establishments_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `Establishments_Report_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, fileName);
 
       toast.success("Report generated successfully");
     } catch (error) {
@@ -236,6 +245,7 @@ const ActivityLogs = () => {
               <TableHead>Appointment Date</TableHead>
               <TableHead>Decline Reason</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Status Updated</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Role</TableHead>
             </TableRow>
@@ -247,6 +257,20 @@ const ActivityLogs = () => {
                 <TableCell>{log.appointmentDate}</TableCell>
                 <TableCell>{log.declineReason}</TableCell>
                 <TableCell>{log.status}</TableCell>
+                <TableCell>
+                  {log.statusTimestamp &&
+                  (log.status === "Inspection Complete" ||
+                    log.status === "Requires Follow-up")
+                    ? new Date(log.statusTimestamp).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )
+                    : "N/A"}
+                </TableCell>
                 <TableCell>{log.name}</TableCell>
                 <TableCell>{log.role}</TableCell>
               </TableRow>

@@ -361,11 +361,15 @@ export default function SanLuisPage() {
 
   const updateStatusInDatabase = async (id, status) => {
     try {
+      const timestamp = new Date().toISOString();
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
         id,
-        { status: status }
+        {
+          status: status,
+          statusTimestamp: timestamp,
+        }
       );
       console.log(`Status updated in database for establishment ${id}`);
     } catch (error) {
@@ -417,6 +421,7 @@ export default function SanLuisPage() {
     }
 
     try {
+      const timestamp = new Date().toISOString();
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
@@ -424,6 +429,7 @@ export default function SanLuisPage() {
         {
           status: "Requires Follow-up",
           declineReason: declineReason,
+          statusTimestamp: timestamp,
         }
       );
 

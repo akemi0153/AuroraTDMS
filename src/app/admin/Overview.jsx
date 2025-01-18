@@ -38,7 +38,8 @@ import {
 } from "@/components/ui/select";
 import { fetchAccommodations } from "@/services/appwrite";
 import { Button } from "@/components/ui/button";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 const client = new Client();
 client
@@ -169,44 +170,56 @@ export default function Dashboard() {
     },
   };
 
-  const generateReport = () => {
-    // Prepare data for the report
-    const reportData = [
-      // Header row
-      ["Dashboard Overview Report", "", "", ""],
-      ["Generated on:", new Date().toLocaleString(), "", ""],
-      ["", "", "", ""],
+  const generateReport = async () => {
+    try {
+      // Prepare data for the report
+      const reportData = [
+        // Header row
+        ["Dashboard Overview Report", "", "", ""],
+        ["Generated on:", new Date().toLocaleString(), "", ""],
+        ["", "", "", ""],
 
-      // Statistics
-      ["Key Metrics", "", "", ""],
-      ["Total Establishments", totalEstablishments, "", ""],
-      ["Total Municipalities", totalMunicipalities, "", ""],
-      ["Pending Approvals", awaitingInspection, "", ""],
-      ["Total Users", users.length, "", ""],
-      ["", "", "", ""],
+        // Statistics
+        ["Key Metrics", "", "", ""],
+        ["Total Establishments", totalEstablishments, "", ""],
+        ["Total Municipalities", totalMunicipalities, "", ""],
+        ["Pending Approvals", awaitingInspection, "", ""],
+        ["Total Users", users.length, "", ""],
+        ["", "", "", ""],
 
-      // Municipality Data
-      ["Establishments per Municipality", "", "", ""],
-      ["Municipality", "Count", "", ""],
-      ...municipalityData.map((item) => [item.name, item.count, "", ""]),
-      ["", "", "", ""],
+        // Municipality Data
+        ["Establishments per Municipality", "", "", ""],
+        ["Municipality", "Count", "", ""],
+        ...municipalityData.map((item) => [item.name, item.count, "", ""]),
+        ["", "", "", ""],
 
-      // User Roles Data
-      ["User Role Distribution", "", "", ""],
-      ["Role", "Count", "", ""],
-      ...userRoleData.map((item) => [item.name, item.value, "", ""]),
-    ];
+        // User Roles Data
+        ["User Role Distribution", "", "", ""],
+        ["Role", "Count", "", ""],
+        ...userRoleData.map((item) => [item.name, item.value, "", ""]),
+      ];
 
-    // Create worksheet
-    const ws = XLSX.utils.aoa_to_sheet(reportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dashboard Report");
+      // Create workbook and worksheet
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Dashboard Report");
 
-    // Generate & Download Excel file
-    XLSX.writeFile(
-      wb,
-      `Dashboard_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-    );
+      // Add data to worksheet
+      reportData.forEach((row) => {
+        worksheet.addRow(row);
+      });
+
+      // Generate & Download Excel file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `Dashboard_Report_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
   };
 
   return (

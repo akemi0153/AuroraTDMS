@@ -14,7 +14,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 // Initialize Appwrite client
 const client = new Client();
@@ -59,29 +60,41 @@ export default function UsersPage() {
     }
   };
 
-  const generateUserReport = () => {
-    // Prepare data for the report
-    const reportData = [
-      // Header row
-      ["Users Report", "", ""],
-      ["Generated on:", new Date().toLocaleString(), ""],
-      ["", "", ""],
+  const generateUserReport = async () => {
+    try {
+      // Prepare data for the report
+      const reportData = [
+        // Header row
+        ["Users Report", "", ""],
+        ["Generated on:", new Date().toLocaleString(), ""],
+        ["", "", ""],
 
-      // Users data
-      ["Name", "Email", "Role"],
-      ...users.map((user) => [user.name, user.email, user.role || "N/A"]),
-    ];
+        // Users data
+        ["Name", "Email", "Role"],
+        ...users.map((user) => [user.name, user.email, user.role || "N/A"]),
+      ];
 
-    // Create worksheet
-    const ws = XLSX.utils.aoa_to_sheet(reportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Users Report");
+      // Create workbook and worksheet
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Users Report");
 
-    // Generate & Download Excel file
-    XLSX.writeFile(
-      wb,
-      `Users_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-    );
+      // Add data to worksheet
+      reportData.forEach((row) => {
+        worksheet.addRow(row);
+      });
+
+      // Generate & Download Excel file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const fileName = `Users_Report_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
   };
 
   useEffect(() => {

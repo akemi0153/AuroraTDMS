@@ -352,11 +352,15 @@ export default function MariaAuroraPage() {
 
   const updateStatusInDatabase = async (id, status) => {
     try {
+      const timestamp = new Date().toISOString();
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
         id,
-        { status: status }
+        {
+          status: status,
+          statusTimestamp: timestamp,
+        }
       );
       console.log(`Status updated in database for establishment ${id}`);
     } catch (error) {
@@ -408,6 +412,7 @@ export default function MariaAuroraPage() {
     }
 
     try {
+      const timestamp = new Date().toISOString();
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
@@ -415,13 +420,19 @@ export default function MariaAuroraPage() {
         {
           status: "Requires Follow-up",
           declineReason: declineReason,
+          statusTimestamp: timestamp,
         }
       );
 
       setAccommodations(
         accommodations.map((acc) =>
           acc.$id === establishmentToDecline.id
-            ? { ...acc, status: "Requires Follow-up", declineReason }
+            ? {
+                ...acc,
+                status: "Requires Follow-up",
+                declineReason,
+                statusTimestamp: timestamp,
+              }
             : acc
         )
       );
@@ -930,32 +941,43 @@ export default function MariaAuroraPage() {
 
             <TabsContent value="details">
               <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                {viewEstablishment &&
-                  Object.entries(viewEstablishment)
-                    .filter(
-                      ([key]) =>
-                        ![
-                          "userId",
-                          "date",
-                          "time",
-                          "$id",
-                          "$createdAt",
-                          "$updatedAt",
-                          "$permissions",
-                          "$databaseId",
-                          "$collectionId",
-                        ].includes(key)
-                    )
-                    .map(([key, value]) => (
-                      <div key={key} className="mb-2">
-                        <strong className="capitalize">
-                          {key.replace(/([A-Z])/g, " $1").trim()}:
-                        </strong>{" "}
-                        <span>
-                          {key === "declineReason" && !value ? "N/A" : value}
-                        </span>
+                {viewEstablishment && (
+                  <>
+                    {Object.entries(viewEstablishment)
+                      .filter(
+                        ([key]) =>
+                          ![
+                            "userId",
+                            "date",
+                            "time",
+                            "$id",
+                            "$createdAt",
+                            "$updatedAt",
+                            "$permissions",
+                            "$databaseId",
+                            "$collectionId",
+                          ].includes(key)
+                      )
+                      .map(([key, value]) => (
+                        <div key={key} className="mb-2">
+                          <strong className="capitalize">
+                            {key.replace(/([A-Z])/g, " $1").trim()}:
+                          </strong>{" "}
+                          <span>
+                            {key === "declineReason" && !value ? "N/A" : value}
+                          </span>
+                        </div>
+                      ))}
+                    {viewEstablishment.statusTimestamp && (
+                      <div className="mb-2">
+                        <strong>Status Updated:</strong>{" "}
+                        {new Date(
+                          viewEstablishment.statusTimestamp
+                        ).toLocaleString()}
                       </div>
-                    ))}
+                    )}
+                  </>
+                )}
               </ScrollArea>
             </TabsContent>
             <TabsContent value="services">
