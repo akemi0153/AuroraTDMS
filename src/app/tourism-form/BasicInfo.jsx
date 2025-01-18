@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { useFormContext } from "react-hook-form";
@@ -10,12 +11,27 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default function BasicInfo() {
   const { register, setValue } = useFormContext();
+  const [lguLicenseImage, setLguLicenseImage] = useState(null);
+  const [dotAccreditationImage, setDotAccreditationImage] = useState(null);
 
   const handleSelectChange = (value, name) => {
     setValue(name, value);
+  };
+
+  const handleImageUpload = (event, setImageFunction) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageFunction(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -66,7 +82,7 @@ export default function BasicInfo() {
               <Input
                 id="contactNumber"
                 placeholder="Enter contact number"
-                type="number"
+                type="tel"
                 {...register("contactNumber", {
                   required: "Contact number is required",
                   pattern: {
@@ -81,13 +97,8 @@ export default function BasicInfo() {
               <Input
                 id="accreditationNumber"
                 placeholder="Enter accreditation number"
-                type="number"
                 {...register("accreditationNumber", {
                   required: "Accreditation number is required",
-                  pattern: {
-                    value: /^[0-9]+$/,
-                    message: "Only numerical values are allowed",
-                  },
                 })}
               />
             </div>
@@ -106,13 +117,8 @@ export default function BasicInfo() {
               <Input
                 id="licenseNumber"
                 placeholder="Enter LGU license number"
-                type="number"
                 {...register("licenseNumber", {
                   required: "LGU license number is required",
-                  pattern: {
-                    value: /^[0-9]+$/,
-                    message: "Only numerical values are allowed",
-                  },
                 })}
               />
             </div>
@@ -210,6 +216,68 @@ export default function BasicInfo() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">LGU License Certificate</h3>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+            {lguLicenseImage ? (
+              <Image
+                src={lguLicenseImage || "/placeholder.svg"}
+                alt="LGU License Certificate"
+                width={300}
+                height={200}
+                className="mx-auto object-contain"
+              />
+            ) : (
+              <Image
+                src="/placeholder.svg?height=200&width=300"
+                alt="LGU License Certificate Placeholder"
+                width={300}
+                height={200}
+                className="mx-auto"
+              />
+            )}
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageUpload(e, setLguLicenseImage)}
+              className="mt-4"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">
+            DOT Accreditation License Certificate
+          </h3>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+            {dotAccreditationImage ? (
+              <Image
+                src={dotAccreditationImage || "/placeholder.svg"}
+                alt="DOT Accreditation License Certificate"
+                width={300}
+                height={200}
+                className="mx-auto object-contain"
+              />
+            ) : (
+              <Image
+                src="/placeholder.svg?height=200&width=300"
+                alt="DOT Accreditation License Certificate Placeholder"
+                width={300}
+                height={200}
+                className="mx-auto"
+              />
+            )}
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageUpload(e, setDotAccreditationImage)}
+              className="mt-4"
+            />
+          </div>
+        </div>
+      </div>
     </TabsContent>
   );
 }
