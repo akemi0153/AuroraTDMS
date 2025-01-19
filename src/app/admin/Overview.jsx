@@ -22,7 +22,15 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Home, Users, Activity, TrendingUp, Download } from "lucide-react";
+import {
+  Home,
+  Users,
+  Activity,
+  TrendingUp,
+  Download,
+  CheckCircle,
+  AlertTriangle,
+} from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -56,6 +64,183 @@ const CHART_COLORS = [
   "#EC4899", // Pink
   "#14B8A6", // Teal
 ];
+
+function InspectionCompleteChart({ data }) {
+  const chartData = data.reduce((acc, item) => {
+    const date = new Date(item.$createdAt).toISOString().split("T")[0];
+    if (!acc[date]) {
+      acc[date] = { date, count: 0 };
+    }
+    if (item.status === "Inspection Complete") {
+      acc[date].count += 1;
+    }
+    return acc;
+  }, {});
+
+  const sortedData = Object.values(chartData).sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
+
+  return (
+    <ChartContainer
+      config={{
+        inspectionComplete: {
+          label: "Inspection Complete",
+          color: "hsl(var(--chart-3))",
+        },
+      }}
+      className="h-[300px] w-full"
+    >
+      <ResponsiveContainer width="100%" height={300}>
+        <AreaChart data={sortedData}>
+          <defs>
+            <linearGradient
+              id="colorInspectionComplete"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop
+                offset="5%"
+                stopColor="hsl(var(--chart-3))"
+                stopOpacity={0.8}
+              />
+              <stop
+                offset="95%"
+                stopColor="hsl(var(--chart-3))"
+                stopOpacity={0.1}
+              />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis dataKey="date" stroke="#6B7280" />
+          <YAxis stroke="#6B7280" />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                labelFormatter={(value) => new Date(value).toLocaleDateString()}
+              />
+            }
+          />
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke="hsl(var(--chart-3))"
+            fillOpacity={1}
+            fill="url(#colorRequiresFollowUp)"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </ChartContainer>
+  );
+}
+
+function RequiresFollowUpChart({ data }) {
+  const chartData = data.reduce((acc, item) => {
+    const date = new Date(item.$createdAt).toISOString().split("T")[0];
+    if (!acc[date]) {
+      acc[date] = { date, count: 0 };
+    }
+    if (item.status === "Requires Follow-Up") {
+      acc[date].count += 1;
+    }
+    return acc;
+  }, {});
+
+  const sortedData = Object.values(chartData).sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
+
+  return (
+    <ChartContainer
+      config={{
+        requiresFollowUp: {
+          label: "Requires Follow-Up",
+          color: "hsl(var(--chart-4))",
+        },
+      }}
+      className="h-[300px] w-full"
+    >
+      <ResponsiveContainer width="100%" height={300}>
+        <AreaChart data={sortedData}>
+          <defs>
+            <linearGradient
+              id="colorRequiresFollowUp"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop
+                offset="5%"
+                stopColor="hsl(var(--chart-4))"
+                stopOpacity={0.8}
+              />
+              <stop
+                offset="95%"
+                stopColor="hsl(var(--chart-4))"
+                stopOpacity={0.1}
+              />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis dataKey="date" stroke="#6B7280" />
+          <YAxis stroke="#6B7280" />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                labelFormatter={(value) => new Date(value).toLocaleDateString()}
+              />
+            }
+          />
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke="hsl(var(--chart-4))"
+            fillOpacity={1}
+            fill="url(#colorRequiresFollowUp)"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </ChartContainer>
+  );
+}
+
+function StatCard({ title, value, description, icon, trend }) {
+  const trendColor = parseFloat(trend) >= 0 ? "text-green-500" : "text-red-500";
+
+  return (
+    <Card className="bg-white dark:bg-gray-800">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {title}
+            </p>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {value}
+            </h3>
+          </div>
+          <div className="p-3 rounded-full bg-gray-100 dark:bg-gray-700">
+            {icon}
+          </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {description}
+          </p>
+          <p className={`text-sm font-medium ${trendColor} flex items-center`}>
+            {trend}
+            <TrendingUp className="ml-1 h-4 w-4" />
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Dashboard() {
   const [accommodations, setAccommodations] = useState([]);
@@ -105,6 +290,13 @@ export default function Dashboard() {
     .size;
   const awaitingInspection = accommodations.filter(
     (e) => e.status === "Awaiting Inspection"
+  ).length;
+
+  const inspectionComplete = accommodations.filter(
+    (e) => e.status === "Inspection Complete"
+  ).length;
+  const requiresFollowUp = accommodations.filter(
+    (e) => e.status === "Requires Follow-Up"
   ).length;
 
   const municipalityData = Object.entries(
@@ -268,6 +460,24 @@ export default function Dashboard() {
           description="Registered users"
           icon={<Users className="h-6 w-6 text-purple-500" />}
           trend={`${((users.length / 100) * 100).toFixed(2)}%`}
+        />
+        <StatCard
+          title="Inspection Complete"
+          value={inspectionComplete}
+          description="Establishments inspected"
+          icon={<CheckCircle className="h-6 w-6 text-green-500" />}
+          trend={`${((inspectionComplete / totalEstablishments) * 100).toFixed(
+            2
+          )}%`}
+        />
+        <StatCard
+          title="Requires Follow-Up"
+          value={requiresFollowUp}
+          description="Establishments needing follow-up"
+          icon={<AlertTriangle className="h-6 w-6 text-yellow-500" />}
+          trend={`${((requiresFollowUp / totalEstablishments) * 100).toFixed(
+            2
+          )}%`}
         />
       </div>
 
@@ -454,40 +664,28 @@ export default function Dashboard() {
             </ChartContainer>
           </CardContent>
         </Card>
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-white">
+              Inspection Complete Over Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <InspectionCompleteChart data={accommodations} />
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-white">
+              Requires Follow-Up Over Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RequiresFollowUpChart data={accommodations} />
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
-}
-
-function StatCard({ title, value, description, icon, trend }) {
-  const trendColor = parseFloat(trend) >= 0 ? "text-green-500" : "text-red-500";
-
-  return (
-    <Card className="bg-white dark:bg-gray-800">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              {title}
-            </p>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {value}
-            </h3>
-          </div>
-          <div className="p-3 rounded-full bg-gray-100 dark:bg-gray-700">
-            {icon}
-          </div>
-        </div>
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {description}
-          </p>
-          <p className={`text-sm font-medium ${trendColor} flex items-center`}>
-            {trend}
-            <TrendingUp className="ml-1 h-4 w-4" />
-          </p>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
