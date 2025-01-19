@@ -143,7 +143,7 @@ function RequiresFollowUpChart({ data }) {
     if (!acc[date]) {
       acc[date] = { date, count: 0 };
     }
-    if (item.status === "Requires Follow-Up") {
+    if (item.approvalStatus === "Requires Follow-Up") {
       acc[date].count += 1;
     }
     return acc;
@@ -296,7 +296,7 @@ export default function Dashboard() {
     (e) => e.status === "Inspection Complete"
   ).length;
   const requiresFollowUp = accommodations.filter(
-    (e) => e.status === "Requires Follow-Up"
+    (e) => e.approvalStatus === "Requires Follow-Up"
   ).length;
 
   const municipalityData = Object.entries(

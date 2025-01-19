@@ -50,16 +50,22 @@ export default function Establishments() {
   const [selectedEstablishment, setSelectedEstablishment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [archivedEstablishments, setArchivedEstablishments] = useState({});
+  const [selectedYear, setSelectedYear] = useState(2025);
 
   useEffect(() => {
     const loadEstablishments = async () => {
       setIsLoading(true);
       try {
         const data = await fetchAccommodations();
-        setEstablishments(data || []);
-        await fetchArchivedEstablishments(selectedYear);
+        const filteredByYear =
+          data?.filter((establishment) => {
+            const establishmentYear = establishment.createdAt
+              ? new Date(establishment.createdAt).getFullYear()
+              : 2025;
+            return establishmentYear === selectedYear;
+          }) || [];
+
+        setEstablishments(filteredByYear);
       } catch (error) {
         console.error("Failed to fetch establishments:", error);
         toast.error("Failed to load establishments");
@@ -72,35 +78,61 @@ export default function Establishments() {
     loadEstablishments();
   }, [selectedYear]);
 
-  const fetchArchivedEstablishments = async (year) => {
-    try {
-      // This is a placeholder. You'll need to implement the actual API call
-      const archived = await fetchAccommodations({ year });
-      setArchivedEstablishments((prevState) => ({
-        ...prevState,
-        [year]: archived,
-      }));
-    } catch (error) {
-      console.error(
-        `Failed to fetch archived establishments for ${year}:`,
-        error
-      );
-      toast.error(`Failed to load archived establishments for ${year}`);
-    }
-  };
-
   const handleArchive = async () => {
     try {
-      await fetchArchivedEstablishments(selectedYear);
-      toast.success(`Archived establishments for ${selectedYear}`);
+      // Create CSV content
+      const csvHeader = [
+        "Establishment Name",
+        "Municipality",
+        "Business Address",
+        "Status",
+        "Decline Reason",
+        "Contact Person",
+        "Contact Number",
+        "Email",
+        "Accreditation Number",
+        "Expiration Date",
+      ].join(",");
+
+      const csvRows = establishments.map((est) =>
+        [
+          `"${est.establishmentName || ""}"`,
+          `"${est.municipality || ""}"`,
+          `"${est.businessAddress || ""}"`,
+          `"${est.status || ""}"`,
+          `"${est.declineReason || ""}"`,
+          `"${est.contactPerson || ""}"`,
+          `"${est.contactNumber || ""}"`,
+          `"${est.email || ""}"`,
+          `"${est.accreditationNumber || ""}"`,
+          `"${
+            est.expirationDate
+              ? new Date(est.expirationDate).toLocaleDateString()
+              : ""
+          }"`,
+        ].join(",")
+      );
+
+      const csvContent = [csvHeader, ...csvRows].join("\n");
+
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `establishments_${selectedYear}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Establishments exported to CSV for ${selectedYear}`);
     } catch (error) {
-      toast.error(`Failed to archive establishments for ${selectedYear}`);
+      console.error("Error exporting to CSV:", error);
+      toast.error(`Failed to export establishments for ${selectedYear}`);
     }
   };
 
-  const filteredEstablishments = (
-    archivedEstablishments[selectedYear] || establishments
-  ).filter((establishment) => {
+  const filteredEstablishments = establishments.filter((establishment) => {
     const matchesSearch =
       (establishment.establishmentName?.toLowerCase() || "").includes(
         searchTerm.toLowerCase()
@@ -170,10 +202,7 @@ export default function Establishments() {
               <SelectValue placeholder="Select Year" />
             </SelectTrigger>
             <SelectContent>
-              {Array.from(
-                { length: 5 },
-                (_, i) => new Date().getFullYear() - i
-              ).map((year) => (
+              {Array.from({ length: 5 }, (_, i) => 2025 - i).map((year) => (
                 <SelectItem key={year} value={year.toString()}>
                   {year}
                 </SelectItem>
@@ -186,11 +215,6 @@ export default function Establishments() {
           </Button>
         </div>
       </div>
-      {archivedEstablishments[selectedYear] && (
-        <div className="mb-4 text-lg font-semibold">
-          Showing archived establishments for {selectedYear}
-        </div>
-      )}
       <Card className="dark:bg-gray-800">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
