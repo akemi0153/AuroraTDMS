@@ -123,6 +123,7 @@ export default function DipaculaoPage() {
   const [loadingCottages, setLoadingCottages] = useState(true);
   const [loadingFacilities, setLoadingFacilities] = useState(true);
   const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [statusTimestamp, setStatusTimestamp] = useState({});
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -195,7 +196,6 @@ export default function DipaculaoPage() {
         const data = await fetchSpecificAccommodations("Dipaculao");
         setAccommodations(data);
 
-        // Calculate counts for each status
         const awaitingInspection = data.filter(
           (acc) => acc.status === "Awaiting Inspection"
         ).length;
@@ -206,7 +206,6 @@ export default function DipaculaoPage() {
           (acc) => acc.status === "Requires Follow-up"
         ).length;
 
-        // Update analytics data
         setAnalyticsData({
           total: {
             count: data.length,
@@ -243,13 +242,13 @@ export default function DipaculaoPage() {
   const generateTrend = (type) => {
     switch (type) {
       case "awaiting":
-        return [2, 5, 3, 8, 4, 6, 5, 7]; // Upward trend
+        return [2, 5, 3, 8, 4, 6, 5, 7];
       case "complete":
-        return [8, 7, 6, 8, 9, 7, 8, 9]; // High performance pattern
+        return [8, 7, 6, 8, 9, 7, 8, 9];
       case "followup":
-        return [4, 2, 3, 1, 3, 2, 4, 2]; // Fluctuating pattern
+        return [4, 2, 3, 1, 3, 2, 4, 2];
       default:
-        return [3, -10, -2, 5, 7, -2, 4, 6]; // Original pattern for Total
+        return [3, -10, -2, 5, 7, -2, 4, 6];
     }
   };
 
@@ -361,13 +360,16 @@ export default function DipaculaoPage() {
     }
   };
 
-  const updateStatusInDatabase = async (id, status) => {
+  const updateStatusInDatabase = async (id, status, timestamp) => {
     try {
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
         id,
-        { status: status }
+        {
+          status: status,
+          statusTimestamp: timestamp,
+        }
       );
       console.log(`Status updated in database for establishment ${id}`);
     } catch (error) {
@@ -394,18 +396,23 @@ export default function DipaculaoPage() {
         return;
       }
 
+      const timestamp = new Date().toISOString();
+
       if (newStatus === "Requires Follow-up") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
       }
 
-      await updateStatusInDatabase(id, newStatus);
+      await updateStatusInDatabase(id, newStatus, timestamp);
       setAccommodations(
         accommodations.map((acc) =>
-          acc.$id === id ? { ...acc, status: newStatus } : acc
+          acc.$id === id
+            ? { ...acc, status: newStatus, statusTimestamp: timestamp }
+            : acc
         )
       );
+      setStatusTimestamp((prev) => ({ ...prev, [id]: timestamp }));
       toast.success(`Establishment status updated to ${newStatus}.`);
     } catch (error) {
       toast.error("Failed to update status. Please try again.");
@@ -419,6 +426,8 @@ export default function DipaculaoPage() {
     }
 
     try {
+      const timestamp = new Date().toISOString();
+
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
@@ -426,16 +435,26 @@ export default function DipaculaoPage() {
         {
           status: "Requires Follow-up",
           declineReason: declineReason,
+          statusTimestamp: timestamp,
         }
       );
 
       setAccommodations(
         accommodations.map((acc) =>
           acc.$id === establishmentToDecline.id
-            ? { ...acc, status: "Requires Follow-up", declineReason }
+            ? {
+                ...acc,
+                status: "Requires Follow-up",
+                declineReason,
+                statusTimestamp: timestamp,
+              }
             : acc
         )
       );
+      setStatusTimestamp((prev) => ({
+        ...prev,
+        [establishmentToDecline.id]: timestamp,
+      }));
 
       setDeclineModalOpen(false);
       setDeclineReason("");
@@ -781,6 +800,9 @@ export default function DipaculaoPage() {
                             Status
                           </TableHead>
                           <TableHead className="font-semibold text-teal-900">
+                            Last Updated
+                          </TableHead>
+                          <TableHead className="font-semibold text-teal-900">
                             Actions
                           </TableHead>
                         </TableRow>
@@ -846,6 +868,15 @@ export default function DipaculaoPage() {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
+                            </TableCell>
+                            <TableCell>
+                              {accommodation.statusTimestamp && (
+                                <p className="text-xs text-gray-500">
+                                  {new Date(
+                                    accommodation.statusTimestamp
+                                  ).toLocaleString()}
+                                </p>
+                              )}
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">

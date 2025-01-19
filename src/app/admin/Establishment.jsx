@@ -9,6 +9,7 @@ import {
   AlertCircle,
   RefreshCw,
   Search,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -49,27 +50,57 @@ export default function Establishments() {
   const [selectedEstablishment, setSelectedEstablishment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [archivedEstablishments, setArchivedEstablishments] = useState({});
 
   useEffect(() => {
     const loadEstablishments = async () => {
       setIsLoading(true);
       try {
         const data = await fetchAccommodations();
-        setEstablishments(data || []); // Ensure we always set an array
+        setEstablishments(data || []);
+        await fetchArchivedEstablishments(selectedYear);
       } catch (error) {
         console.error("Failed to fetch establishments:", error);
         toast.error("Failed to load establishments");
-        setEstablishments([]); // Set to empty array on error
+        setEstablishments([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadEstablishments();
-  }, []);
+  }, [selectedYear]);
 
-  const filteredEstablishments = establishments.filter((establishment) => {
-    // First apply the search term filter
+  const fetchArchivedEstablishments = async (year) => {
+    try {
+      // This is a placeholder. You'll need to implement the actual API call
+      const archived = await fetchAccommodations({ year });
+      setArchivedEstablishments((prevState) => ({
+        ...prevState,
+        [year]: archived,
+      }));
+    } catch (error) {
+      console.error(
+        `Failed to fetch archived establishments for ${year}:`,
+        error
+      );
+      toast.error(`Failed to load archived establishments for ${year}`);
+    }
+  };
+
+  const handleArchive = async () => {
+    try {
+      await fetchArchivedEstablishments(selectedYear);
+      toast.success(`Archived establishments for ${selectedYear}`);
+    } catch (error) {
+      toast.error(`Failed to archive establishments for ${selectedYear}`);
+    }
+  };
+
+  const filteredEstablishments = (
+    archivedEstablishments[selectedYear] || establishments
+  ).filter((establishment) => {
     const matchesSearch =
       (establishment.establishmentName?.toLowerCase() || "").includes(
         searchTerm.toLowerCase()
@@ -78,12 +109,10 @@ export default function Establishments() {
         searchTerm.toLowerCase()
       );
 
-    // Then apply the municipality filter if a specific municipality is selected
     const matchesMunicipality =
       selectedMunicipality === "All" ||
       establishment.municipality === selectedMunicipality;
 
-    // Return true only if both conditions are met
     return matchesSearch && matchesMunicipality;
   });
 
@@ -133,14 +162,41 @@ export default function Establishments() {
                 ))}
             </SelectContent>
           </Select>
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(value) => setSelectedYear(parseInt(value))}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Select Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from(
+                { length: 5 },
+                (_, i) => new Date().getFullYear() - i
+              ).map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleArchive} className="flex items-center gap-2">
+            <Archive className="h-4 w-4" />
+            Archive
+          </Button>
         </div>
       </div>
+      {archivedEstablishments[selectedYear] && (
+        <div className="mb-4 text-lg font-semibold">
+          Showing archived establishments for {selectedYear}
+        </div>
+      )}
       <Card className="dark:bg-gray-800">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <p>Loading establishments...</p>
           </div>
-        ) : establishments && establishments.length > 0 ? (
+        ) : filteredEstablishments.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow className="bg-sky-50 hover:bg-sky-100 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200">
@@ -224,7 +280,7 @@ export default function Establishments() {
             <p>No establishments found.</p>
           </div>
         )}
-        {establishments && establishments.length > 0 && (
+        {filteredEstablishments.length > 0 && (
           <div className="flex items-center justify-between px-4 py-4 bg-sky-50 dark:bg-gray-700 rounded-b-lg">
             <p className="text-sm text-gray-700">
               Showing {indexOfFirstItem + 1} to{" "}

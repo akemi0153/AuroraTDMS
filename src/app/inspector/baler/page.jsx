@@ -129,7 +129,6 @@ export default function BalerPage() {
       try {
         const user = await getCurrentUser();
         if (!user) {
-          toast.error("Please log in first");
           router.push("/login");
           return;
         }
@@ -171,14 +170,14 @@ export default function BalerPage() {
                   router.push("/login");
               }
             }
-          }, 3000);
+          }, 1000);
           return;
         }
 
         setIsAuthorized(true);
         setAuthChecked(true);
       } catch (error) {
-        toast.error("Authentication error");
+        console.error("Authentication error:", error);
         router.push("/login");
       }
     };
@@ -263,6 +262,7 @@ export default function BalerPage() {
       toast.success("Logged out successfully");
       router.push("/login");
     } catch (error) {
+      console.error("Failed to logout properly:", error);
       toast.error("Failed to logout properly");
       window.location.href = "/login";
     }
@@ -358,13 +358,16 @@ export default function BalerPage() {
     }
   };
 
-  const updateStatusInDatabase = async (id, status) => {
+  const updateStatusInDatabase = async (id, status, timestamp) => {
     try {
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
         id,
-        { status: status }
+        {
+          status: status,
+          statusTimestamp: timestamp,
+        }
       );
       console.log(`Status updated in database for establishment ${id}`);
     } catch (error) {
@@ -386,10 +389,12 @@ export default function BalerPage() {
         establishment.status === "Requires Follow-up"
       ) {
         toast.error(
-          `Cannot change status of an establishment that is already {establishment.status}.`
+          `Cannot change status of an establishment that is already ${establishment.status}.`
         );
         return;
       }
+
+      const timestamp = new Date().toISOString();
 
       if (newStatus === "Requires Follow-up") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
@@ -397,10 +402,12 @@ export default function BalerPage() {
         return;
       }
 
-      await updateStatusInDatabase(id, newStatus);
+      await updateStatusInDatabase(id, newStatus, timestamp);
       setAccommodations(
         accommodations.map((acc) =>
-          acc.$id === id ? { ...acc, status: newStatus } : acc
+          acc.$id === id
+            ? { ...acc, status: newStatus, statusTimestamp: timestamp }
+            : acc
         )
       );
       toast.success(`Establishment status updated to ${newStatus}.`);
@@ -416,6 +423,8 @@ export default function BalerPage() {
     }
 
     try {
+      const timestamp = new Date().toISOString();
+
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
@@ -423,13 +432,19 @@ export default function BalerPage() {
         {
           status: "Requires Follow-up",
           declineReason: declineReason,
+          statusTimestamp: timestamp,
         }
       );
 
       setAccommodations(
         accommodations.map((acc) =>
           acc.$id === establishmentToDecline.id
-            ? { ...acc, status: "Requires Follow-up", declineReason }
+            ? {
+                ...acc,
+                status: "Requires Follow-up",
+                declineReason,
+                statusTimestamp: timestamp,
+              }
             : acc
         )
       );

@@ -42,6 +42,7 @@ import Overview from "./Overview";
 import Establishments from "./Establishment";
 import UsersPage from "./users";
 import ActivityLogs from "./ActivityLog";
+import SettingsPage from "./setting";
 
 const queryClient = new QueryClient();
 
@@ -240,6 +241,8 @@ export default function AdminDashboard() {
         return <UsersPage />;
       case "activity":
         return <ActivityLogs />;
+      case "settings":
+        return <SettingsPage />;
       default:
         return (
           <Overview
@@ -250,6 +253,14 @@ export default function AdminDashboard() {
         );
     }
   };
+
+  const navigationItems = [
+    { name: "Overview", icon: BarChart },
+    { name: "Establishments", icon: Building },
+    { name: "Users", icon: Users },
+    { name: "Activity", icon: Activity },
+    { name: "Settings", icon: Settings },
+  ];
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -279,12 +290,7 @@ export default function AdminDashboard() {
           </div>
           <nav className="flex-1 overflow-auto py-4">
             <div className="flex flex-col space-y-1 px-3">
-              {[
-                { name: "Overview", icon: BarChart },
-                { name: "Establishments", icon: Building },
-                { name: "Users", icon: Users },
-                { name: "Activity", icon: Activity },
-              ].map((item) => (
+              {navigationItems.map((item) => (
                 <Button
                   key={item.name}
                   variant={

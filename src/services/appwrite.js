@@ -305,12 +305,11 @@ export async function fetchServices(accommodationId) {
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.servicesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
     );
     return result.documents;
   } catch (error) {
-    console.error("Error fetching services:", error);
-    return [];
+    throw new Error("Failed to fetch services");
   }
 }
 
@@ -319,13 +318,11 @@ export async function fetchRooms(accommodationId) {
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.roomsCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
     );
-    console.log("Fetched rooms:", result.documents);
     return result.documents;
   } catch (error) {
-    console.error("Error fetching rooms:", error);
-    return [];
+    throw new Error("Failed to fetch rooms");
   }
 }
 
@@ -334,13 +331,11 @@ export async function fetchEmployees(accommodationId) {
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.employeesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
     );
-    console.log("Fetched employees:", result.documents);
     return result.documents;
   } catch (error) {
-    console.error("Error fetching employees:", error);
-    return [];
+    throw new Error("Failed to fetch employees");
   }
 }
 
@@ -349,13 +344,11 @@ export async function fetchCottages(accommodationId) {
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.cottagesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
     );
-    console.log("Fetched cottages:", result.documents);
     return result.documents;
   } catch (error) {
-    console.error("Error fetching cottages:", error);
-    return [];
+    throw new Error("Failed to fetch cottages");
   }
 }
 
@@ -364,13 +357,11 @@ export async function fetchFacilities(accommodationId) {
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.facilitiesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
+      [Query.equal("accommodationId", accommodationId), Query.limit(1000)]
     );
-    console.log("Fetched facilities:", result.documents);
     return result.documents;
   } catch (error) {
-    console.error("Error fetching facilities:", error);
-    return [];
+    throw new Error("Failed to fetch facilities");
   }
 }
 
@@ -469,91 +460,3 @@ export async function createActivityLog(logData) {
     throw new Error("Failed to create activity log");
   }
 }
-
-// Add these collection IDs as constants
-const ServicesCollectionId = "6743c72d003a2d3b298d";
-const RoomsCollectionId = "6742f65c003e2169aa2b";
-const CottagesCollectionId = "674342ba0017b324fb03";
-const FacilitiesCollectionId = "6741e31a0022f8e43fb3";
-const EmployeesCollectionId = "67432e7e00241eb80e40";
-
-// Add these methods to fetch data from each collection
-async function getServicesByAccommodationId(accommodationId) {
-  try {
-    const response = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      ServicesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
-    );
-    return response.documents;
-  } catch (error) {
-    console.error("Error fetching services:", error);
-    throw error;
-  }
-}
-
-async function getRoomsByAccommodationId(accommodationId) {
-  try {
-    const response = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      RoomsCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
-    );
-    return response.documents;
-  } catch (error) {
-    console.error("Error fetching rooms:", error);
-    throw error;
-  }
-}
-
-async function getCottagesByAccommodationId(accommodationId) {
-  try {
-    const response = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      CottagesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
-    );
-    return response.documents;
-  } catch (error) {
-    console.error("Error fetching cottages:", error);
-    throw error;
-  }
-}
-
-async function getFacilitiesByAccommodationId(accommodationId) {
-  try {
-    const response = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      FacilitiesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
-    );
-    return response.documents;
-  } catch (error) {
-    console.error("Error fetching facilities:", error);
-    throw error;
-  }
-}
-
-async function getEmployeesByAccommodationId(accommodationId) {
-  try {
-    const response = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      EmployeesCollectionId,
-      [Query.equal("accommodationId", accommodationId)]
-    );
-    return response.documents;
-  } catch (error) {
-    console.error("Error fetching employees:", error);
-    throw error;
-  }
-}
-
-// Export the new functions
-export {
-  // ... existing exports
-  getServicesByAccommodationId,
-  getRoomsByAccommodationId,
-  getCottagesByAccommodationId,
-  getFacilitiesByAccommodationId,
-  getEmployeesByAccommodationId,
-};

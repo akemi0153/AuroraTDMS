@@ -76,6 +76,7 @@ const FormStatus = () => {
           "status",
           "accommodationId",
           "appointmentDate",
+          "statusTimestamp",
         ]),
       ]
     );
@@ -90,12 +91,6 @@ const FormStatus = () => {
       return;
     }
 
-    // Check if there is any existing form
-    if (formStatuses.length > 0) {
-      toast.error("Cannot submit a new form while there is an existing form.");
-      return;
-    }
-
     const latestForm = formStatuses[0];
 
     // Check for Inspection in Progress status
@@ -104,12 +99,7 @@ const FormStatus = () => {
       return;
     }
 
-    // Check for Inspection Complete status
-    if (latestForm && latestForm.status === "Inspection Complete") {
-      toast.error("Form cannot be updated as the inspection is completed.");
-      return;
-    }
-
+    // Allow updates for "Requires Follow-up" status
     const formPath =
       latestForm && latestForm.status === "Requires Follow-up"
         ? `/update-form?formId=${latestForm.$id}`
@@ -124,7 +114,6 @@ const FormStatus = () => {
         <Button
           onClick={handleSubmitNewForm}
           className="mb-6 bg-indigo-600 hover:bg-indigo-700 text-white"
-          disabled={formStatuses.length > 0}
         >
           Submit an Accommodation Form
         </Button>
@@ -133,16 +122,13 @@ const FormStatus = () => {
 
     const { status } = accommodationDetails;
 
-    // Check if the status is "Inspection in Progress" or "Inspection Complete"
-    if (
-      status === "Inspection in Progress" ||
-      status === "Inspection Complete"
-    ) {
-      return null; // Do not render the button if status is either "Inspection in Progress" or "Inspection Complete"
+    // Hide button for "Inspection in Progress"
+    if (status === "Inspection in Progress") {
+      return null;
     }
 
-    // Disable button if there are existing forms
-    const isDisabled = formStatuses.length > 0;
+    // Disable button only for "Inspection Complete"
+    const isDisabled = status === "Inspection Complete";
 
     return (
       <Button
@@ -350,6 +336,14 @@ const FormStatus = () => {
                       ? new Date(form.appointmentDate).toLocaleString()
                       : "Not scheduled yet"}
                   </p>
+                  {form.statusTimestamp &&
+                    (form.status === "Inspection Complete" ||
+                      form.status === "Requires Follow-up") && (
+                      <p className="text-sm text-gray-500 mb-1">
+                        Status Updated:{" "}
+                        {new Date(form.statusTimestamp).toLocaleString()}
+                      </p>
+                    )}
                   <p className="text-sm text-gray-500">
                     Form ID: {form.accommodationId || "N/A"}
                   </p>

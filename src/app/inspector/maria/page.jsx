@@ -350,13 +350,16 @@ export default function MariaAuroraPage() {
     }
   };
 
-  const updateStatusInDatabase = async (id, status) => {
+  const updateStatusInDatabase = async (id, status, timestamp) => {
     try {
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
         id,
-        { status: status }
+        {
+          status: status,
+          statusTimestamp: timestamp,
+        }
       );
       console.log(`Status updated in database for establishment ${id}`);
     } catch (error) {
@@ -383,16 +386,20 @@ export default function MariaAuroraPage() {
         return;
       }
 
+      const timestamp = new Date().toISOString();
+
       if (newStatus === "Requires Follow-up") {
         setEstablishmentToDecline({ id, currentStatus: establishment.status });
         setDeclineModalOpen(true);
         return;
       }
 
-      await updateStatusInDatabase(id, newStatus);
+      await updateStatusInDatabase(id, newStatus, timestamp);
       setAccommodations(
         accommodations.map((acc) =>
-          acc.$id === id ? { ...acc, status: newStatus } : acc
+          acc.$id === id
+            ? { ...acc, status: newStatus, statusTimestamp: timestamp }
+            : acc
         )
       );
       toast.success(`Establishment status updated to ${newStatus}.`);
@@ -408,6 +415,8 @@ export default function MariaAuroraPage() {
     }
 
     try {
+      const timestamp = new Date().toISOString();
+
       await databases.updateDocument(
         "672cfccb002f456cb332",
         "6741d7f2000200706b21",
@@ -415,13 +424,19 @@ export default function MariaAuroraPage() {
         {
           status: "Requires Follow-up",
           declineReason: declineReason,
+          statusTimestamp: timestamp,
         }
       );
 
       setAccommodations(
         accommodations.map((acc) =>
           acc.$id === establishmentToDecline.id
-            ? { ...acc, status: "Requires Follow-up", declineReason }
+            ? {
+                ...acc,
+                status: "Requires Follow-up",
+                declineReason,
+                statusTimestamp: timestamp,
+              }
             : acc
         )
       );
