@@ -1,229 +1,358 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Loader2,
   CheckCircle,
   Clock,
   AlertTriangle,
+  Building,
+  MapPin,
+  Phone,
+  Mail,
   Calendar,
-  Home,
-  User,
   FileText,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { databases } from "@/services/appwrite";
+import { Query } from "appwrite";
+import { toast } from "react-hot-toast";
 
 const FormStatus = () => {
   const router = useRouter();
-  const { query } = router; // Get the query object from router
-  const formData = query.formData ? JSON.parse(query.formData) : null; // Safely parse formData
+  const [accommodationDetails, setAccommodationDetails] = useState(null);
+  const [formStatuses, setFormStatuses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Check if formData is null and handle accordingly
-  if (!formData) {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold">Error</h2>
-        <p>
-          No form data available. Please ensure you have submitted the form
-          correctly.
-        </p>
-        <Button onClick={() => router.push("/")} className="mt-4">
-          Go Back
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const userId = sessionStorage.getItem("userId");
+        if (!userId) throw new Error("No user logged in");
+
+        const [accommodationResponse, formStatusesResponse] = await Promise.all(
+          [fetchAccommodationDetails(userId), fetchFormStatuses(userId)]
+        );
+
+        setAccommodationDetails(accommodationResponse);
+        setFormStatuses(formStatusesResponse);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const fetchAccommodationDetails = async (userId) => {
+    const response = await databases.listDocuments(
+      "672cfccb002f456cb332",
+      "6741d7f2000200706b21",
+      [Query.equal("userId", userId), Query.limit(1)]
+    );
+    return response.documents[0] || null;
+  };
+
+  const fetchFormStatuses = async (userId) => {
+    const response = await databases.listDocuments(
+      "672cfccb002f456cb332",
+      "6741d7f2000200706b21",
+      [
+        Query.equal("userId", userId),
+        Query.orderDesc("$createdAt"),
+        Query.select([
+          "$id",
+          "$createdAt",
+          "establishmentName",
+          "status",
+          "accommodationId",
+          "appointmentDate",
+          "statusTimestamp",
+        ]),
+      ]
+    );
+    return response.documents;
+  };
+
+  const handleSubmitNewForm = () => {
+    const userId = sessionStorage.getItem("userId");
+    if (!userId) {
+      console.error("No userId found in session storage");
+      toast.error("User session not found. Please log in again.");
+      return;
+    }
+
+    const latestForm = formStatuses[0];
+
+    // Check for Inspection in Progress status
+    if (latestForm && latestForm.status === "Inspection in Progress") {
+      toast.error("Cannot submit new form while inspection is in progress");
+      return;
+    }
+
+    // Allow updates for "Requires Follow-up" status
+    const formPath =
+      latestForm && latestForm.status === "Requires Follow-up"
+        ? `/update-form?formId=${latestForm.$id}`
+        : `/tourism-form?userId=${userId}`;
+
+    router.push(formPath);
+  };
+
+  const renderSubmitButton = () => {
+    if (!accommodationDetails) {
+      return (
+        <Button
+          onClick={handleSubmitNewForm}
+          className="mb-6 bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
+          Submit an Accommodation Form
         </Button>
+      );
+    }
+
+    const { status } = accommodationDetails;
+
+    // Hide button for "Inspection in Progress"
+    if (status === "Inspection in Progress") {
+      return null;
+    }
+
+    // Disable button only for "Inspection Complete"
+    const isDisabled = status === "Inspection Complete";
+
+    return (
+      <Button
+        onClick={handleSubmitNewForm}
+        className={`mb-6 bg-indigo-600 hover:bg-indigo-700 text-white ${
+          isDisabled ? "opacity-50 cursor-not-allowed" : ""
+        }`}
+        disabled={isDisabled}
+      >
+        {status === "Requires Follow-up" ? "Update Form" : "Submit New Form"}
+      </Button>
+    );
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "Inspection Complete":
+        return <CheckCircle className="text-green-500" size={24} />;
+      case "In Review":
+      case "Inspection in Progress":
+        return <Clock className="text-yellow-500" size={24} />;
+      case "Requires Follow-up":
+        return <AlertTriangle className="text-red-500" size={24} />;
+      default:
+        return <Clock className="text-blue-500" size={24} />;
+    }
+  };
+
+  const renderAccommodationDetails = () => {
+    if (!accommodationDetails) {
+      return (
+        <Card className="w-full max-w-2xl mx-auto mb-8">
+          <CardContent className="p-6">
+            <p className="text-gray-500 text-center">
+              No accommodation details found.
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const {
+      municipality,
+      establishmentName,
+      businessAddress,
+      accreditationNumber,
+      expirationDate,
+      licenseNumber,
+      contactPerson,
+      email,
+      accommodationId,
+      contactNumber,
+      status,
+      appointmentDate,
+    } = accommodationDetails;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="w-full max-w-2xl mx-auto mb-8 overflow-hidden">
+          <CardHeader className="bg-indigo-600 text-white">
+            <CardTitle className="text-2xl">Accommodation Details</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <DetailItem
+                icon={Building}
+                label="Establishment"
+                value={establishmentName}
+              />
+              <DetailItem
+                icon={MapPin}
+                label="Municipality"
+                value={municipality}
+              />
+              <DetailItem
+                icon={MapPin}
+                label="Address"
+                value={businessAddress}
+              />
+              <DetailItem
+                icon={FileText}
+                label="License Number"
+                value={licenseNumber}
+              />
+              <DetailItem
+                icon={FileText}
+                label="Accreditation Number"
+                value={accreditationNumber}
+              />
+              <DetailItem
+                icon={Calendar}
+                label="Expiration Date"
+                value={new Date(expirationDate).toLocaleDateString()}
+              />
+              <DetailItem
+                icon={Phone}
+                label="Contact Number"
+                value={contactNumber}
+              />
+              <DetailItem icon={Mail} label="Email" value={email} />
+              <DetailItem
+                icon={FileText}
+                label="Accommodation ID"
+                value={accommodationId}
+              />
+              <DetailItem icon={Clock} label="Status" value={status} />
+              <DetailItem
+                icon={Calendar}
+                label="Appointment Date"
+                value={
+                  appointmentDate
+                    ? new Date(appointmentDate).toLocaleString()
+                    : "Not scheduled"
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
+
+  const DetailItem = ({ icon: Icon, label, value }) => (
+    <div className="flex items-center space-x-2">
+      <Icon className="text-indigo-500" size={20} />
+      <div>
+        <p className="text-sm font-medium text-gray-500">{label}</p>
+        <p className="text-sm text-gray-900">{value}</p>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
       </div>
     );
   }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Approved":
-        return <CheckCircle className="text-green-500" size={24} />;
-      case "In Review":
-        return <Clock className="text-yellow-500" size={24} />;
-      case "Rejected":
-        return <AlertTriangle className="text-red-500" size={24} />;
-      default:
-        return null;
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  if (error) {
+    return (
+      <div className="text-red-500 text-center p-4 bg-red-100 rounded-lg">
+        {error}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Accommodation Inspection Form</CardTitle>
-          <CardDescription>Form ID: {formData.id || "N/A"}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-gray-500">
-              Submitted on: {formatDate(formData.submittedAt) || "N/A"}
-            </p>
-            <p className="text-sm text-gray-500">
-              Last updated: {formatDate(formData.lastUpdated) || "N/A"}
-            </p>
-            <div className="flex items-center">
-              {getStatusIcon(formData.status)}
-              <Badge
-                variant={
-                  formData.status === "Approved"
-                    ? "success"
-                    : formData.status === "In Review"
-                    ? "warning"
-                    : "destructive"
-                }
-                className="ml-2"
-              >
-                {formData.status || "N/A"}
-              </Badge>
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Property Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Home className="mr-2 h-4 w-4" />
-                    <span>{formData.propertyDetails?.address || "N/A"}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-semibold mr-2">Type:</span>
-                    <span>{formData.propertyDetails?.type || "N/A"}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-semibold mr-2">Bedrooms:</span>
-                    <span>{formData.propertyDetails?.bedrooms || "N/A"}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-semibold mr-2">Bathrooms:</span>
-                    <span>{formData.propertyDetails?.bathrooms || "N /A"}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-semibold mr-2">Square Footage:</span>
-                    <span>
-                      {formData.propertyDetails?.squareFootage
-                        ? `${formData.propertyDetails.squareFootage} sq ft`
-                        : "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Inspection Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <span>
-                      Scheduled for:{" "}
-                      {formatDate(formData.inspectionDetails?.scheduledDate) ||
-                        "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>
-                      Inspector:{" "}
-                      {formData.inspectionDetails?.inspector || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4" />
-                    <span>
-                      Estimated Duration:{" "}
-                      {formData.inspectionDetails?.estimatedDuration || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-8">
+      {renderAccommodationDetails()}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Application Timeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ol className="relative border-l border-gray-200 dark:border-gray-700">
-            {formData.timeline?.map((event, index) => (
-              <li key={index} className="mb-10 ml-4">
-                <div className="absolute w-3 h-3 bg-gray-200 rounded-full mt-1.5 -left-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
-                <time className="mb-1 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">
-                  {formatDate(event.date) || "N/A"}
-                </time>
-                <p className="text-base font-normal text-gray-500 dark:text-gray-400">
-                  {event.event || "N/A"}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </CardContent>
-      </Card>
+      <motion.h2
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-3xl font-bold text-indigo-700 mb-6"
+      >
+        Your Accommodation Form Status
+      </motion.h2>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        {renderSubmitButton()}
+      </motion.div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Required Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {formData.requiredDocuments?.map((doc, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <FileText className="mr-2 h-4 w-4" />
-                  <span>{doc.name || "N/A"}</span>
-                </div>
-                <Badge
-                  variant={doc.status === "Submitted" ? "success" : "warning"}
-                >
-                  {doc.status || "N/A"}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Next Steps</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4">
-            {formData.status === "In Review"
-              ? "Your accommodation inspection form is currently under review. We'll notify you if we need any additional information about the property. Please ensure all required documents are submitted before the scheduled inspection date."
-              : formData.status === "Approved"
-              ? "Great news! Your accommodation has passed the inspection. We'll be in touch shortly with the official certification and any recommendations for maintaining compliance."
-              : "We're sorry, but your accommodation did not meet the required standards. Please review the detailed report and contact our support team for guidance on necessary improvements. You may need to schedule a re-inspection after addressing the issues."}
-          </p>
-          <Button onClick={() => router.push("/support")}>
-            Contact Support
-          </Button>
-        </CardContent>
-      </Card>
+      {formStatuses.length === 0 ? (
+        <p className="text-gray-500 text-center">
+          You haven't submitted any accommodation forms yet.
+        </p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {formStatuses.map((form, index) => (
+            <motion.div
+              key={form.$id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <Card className="h-full">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex justify-between items-center text-lg">
+                    <span className="truncate">{form.establishmentName}</span>
+                    <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
+                      {getStatusIcon(form.status)}
+                      <span className="text-sm font-medium">
+                        {form.status || "Awaiting Inspection"}
+                      </span>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500 mb-1">
+                    Submitted: {new Date(form.$createdAt).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-1">
+                    Appointment:{" "}
+                    {form.appointmentDate
+                      ? new Date(form.appointmentDate).toLocaleString()
+                      : "Not scheduled yet"}
+                  </p>
+                  {form.statusTimestamp &&
+                    (form.status === "Inspection Complete" ||
+                      form.status === "Requires Follow-up") && (
+                      <p className="text-sm text-gray-500 mb-1">
+                        Status Updated:{" "}
+                        {new Date(form.statusTimestamp).toLocaleString()}
+                      </p>
+                    )}
+                  <p className="text-sm text-gray-500">
+                    Form ID: {form.accommodationId || "N/A"}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
