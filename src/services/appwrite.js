@@ -1,4 +1,4 @@
-import { Account, Client, Databases, ID, Query, Storage } from "appwrite";
+import { Account, Client, Databases, ID, Query } from "appwrite";
 
 // Appwrite configuration
 export const appwriteConfig = {
@@ -13,7 +13,6 @@ export const appwriteConfig = {
   roomsCollectionId: "6742f65c003e2169aa2b",
   servicesCollectionId: "6743c72d003a2d3b298d",
   logsCollectionId: "6766ffac001f897801e9",
-  storageBucketId: "6789e834002216f21c5c",
 };
 
 if (!appwriteConfig.endpoint || !appwriteConfig.projectId) {
@@ -28,9 +27,6 @@ client
 
 export const account = new Account(client);
 export const databases = new Databases(client);
-
-// Initialize Storage
-export const storage = new Storage(client);
 
 // Sign In
 export async function signIn(email, password) {
@@ -462,31 +458,5 @@ export async function createActivityLog(logData) {
   } catch (error) {
     console.error("Error creating activity log:", error);
     throw new Error("Failed to create activity log");
-  }
-}
-
-// Update the uploadImage function to be more robust
-export async function uploadImage(file, bucketId) {
-  try {
-    if (!file) {
-      return null;
-    }
-    const fileData = await storage.createFile(bucketId, ID.unique(), file);
-    return fileData.$id;
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    throw new Error("Failed to upload image");
-  }
-}
-
-// Add a function to get image preview URL
-export async function getImagePreview(fileId, bucketId) {
-  try {
-    if (!fileId) return null;
-    const imageUrl = storage.getFilePreview(bucketId, fileId);
-    return imageUrl;
-  } catch (error) {
-    console.error("Error getting image preview:", error);
-    return null;
   }
 }

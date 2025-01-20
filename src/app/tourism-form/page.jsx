@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Modal from "@/components/modal";
 import { useAuthUserStore } from "@/services/user";
-import { createDocument, signOut, uploadImage } from "@/services/appwrite";
+import { createDocument, signOut } from "@/services/appwrite";
 import BasicInfo from "./BasicInfo";
 import Facilities from "./Facilities";
 import Rooms from "./Rooms";
@@ -16,12 +16,13 @@ import Services from "./Services";
 import Employees from "./Employees";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
+import { XCircle } from "lucide-react";
 import { ArrowLeft } from "lucide-react";
 
 export default function TourismForm() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const methods = useForm();
 
   const { authUser, clearAuthUser } = useAuthUserStore();
@@ -29,8 +30,8 @@ export default function TourismForm() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      clearAuthUser();
+      await signOut(); // Log out the user
+      clearAuthUser(); // Clear auth user from store
       toast.success("Successfully logged out.");
       router.push("/login");
     } catch (error) {
@@ -40,55 +41,20 @@ export default function TourismForm() {
 
   const normalizeUrl = (url) => {
     if (!/^https?:\/\//.test(url)) {
-      return `http://${url}`;
+      return `http://${url}`; // Add http:// if missing
     }
     return url;
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data = {}) => {
     const accommodationId = uuidv4();
-    setIsLoading(true);
     try {
       const userId = sessionStorage.getItem("userId");
       if (!userId) {
         throw new Error("User is not logged in.");
       }
 
-      // Upload images if they exist
-      let lguLicenseFileId = null;
-      let dotAccreditationFileId = null;
-
-      // Get files from form data
-      const lguLicenseFile = data.lguLicenseFile;
-      const dotAccreditationFile = data.dotAccreditationFile;
-
-      // Upload LGU License image
-      if (lguLicenseFile) {
-        try {
-          lguLicenseFileId = await uploadImage(
-            lguLicenseFile,
-            "6789e834002216f21c5c" // Storage Bucket ID
-          );
-        } catch (error) {
-          console.error("Error uploading LGU License:", error);
-          toast.error("Failed to upload LGU License image");
-        }
-      }
-
-      // Upload DOT Accreditation image
-      if (dotAccreditationFile) {
-        try {
-          dotAccreditationFileId = await uploadImage(
-            dotAccreditationFile,
-            "6789e834002216f21c5c" // Storage Bucket ID
-          );
-        } catch (error) {
-          console.error("Error uploading DOT Accreditation:", error);
-          toast.error("Failed to upload DOT Accreditation image");
-        }
-      }
-
-      // Check for existing submission
+      // Check for existing submission for this user
       try {
         const response = await fetch(
           `/app/api/check-submission?userId=${userId}`
@@ -107,17 +73,18 @@ export default function TourismForm() {
         }
       } catch (error) {
         console.error("Error checking submission:", error);
+        // Continue with submission if check fails
       }
 
       // Normalize website URL
-      const normalizedWebsite = data.website ? normalizeUrl(data.website) : "";
+      const normalizedWebsite = normalizeUrl(data.website);
 
-      // Validate email format
-      if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      // Validate email format before submission
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
         throw new Error("Invalid email address format");
       }
 
-      // Create basic info document with image IDs
+      // Create basic info document
       const basicInfoResult = await createDocument("6741d7f2000200706b21", {
         accommodationId,
         municipality: data.municipality,
@@ -135,8 +102,6 @@ export default function TourismForm() {
         twitter: data.twitter,
         website: normalizedWebsite,
         bookingCompany: data.bookingCompany,
-        lguLicenseImageId: lguLicenseFileId,
-        dotAccreditationImageId: dotAccreditationFileId,
         status: "Awaiting Inspection",
         userId,
         declineReason: "",
@@ -157,6 +122,7 @@ export default function TourismForm() {
       if (data.acRooms?.length || data.fanRooms?.length) {
         const roomsData = {
           accommodationId,
+          // AC Rooms - flatten the array into separate fields
           acRoomtype: data.acRooms?.map((room) => room.type || "") || [],
           acRoomnum:
             data.acRooms?.map((room) => parseInt(room.number) || 0) || [],
@@ -167,6 +133,8 @@ export default function TourismForm() {
             data.acRooms?.map((room) => parseFloat(room.rate) || 0.0) || [],
           acRoomamenities:
             data.acRooms?.map((room) => room.amenities || "") || [],
+
+          // Fan Rooms - flatten the array into separate fields
           fanRoomtype: data.fanRooms?.map((room) => room.type || "") || [],
           fanRoomnum:
             data.fanRooms?.map((room) => parseInt(room.number) || 0) || [],
@@ -189,6 +157,7 @@ export default function TourismForm() {
       ) {
         const cottagesData = {
           accommodationId,
+          // AC Cottages
           acCottagesname:
             data.acCottages?.map((cottage) => cottage.name || "") || [],
           acCottagessize:
@@ -203,6 +172,8 @@ export default function TourismForm() {
             ) || [],
           acCottagesamenities:
             data.acCottages?.map((cottage) => cottage.amenities || "") || [],
+
+          // Non-AC Cottages
           nonacCottagesname:
             data.nonAcCottages?.map((cottage) => cottage.name || "") || [],
           nonacCottagessize:
@@ -217,6 +188,8 @@ export default function TourismForm() {
             ) || [],
           nonacCottagesamenities:
             data.nonAcCottages?.map((cottage) => cottage.amenities || "") || [],
+
+          // Tents
           tentsName: data.tents?.map((tent) => tent.name || "") || [],
           tentSize: data.tents?.map((tent) => tent.size || "") || [],
           tentCapacity:
@@ -231,7 +204,7 @@ export default function TourismForm() {
       // Create services document
       const servicesData = {
         accommodationId,
-        // ... services data
+        // ... rest of your services data
       };
       await createDocument("6743c72d003a2d3b298d", servicesData);
 
@@ -252,8 +225,6 @@ export default function TourismForm() {
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error(error.message || "Failed to submit form. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -271,9 +242,9 @@ export default function TourismForm() {
   const handleNext = () => {
     const currentIndex = tabOrder.indexOf(activeTab);
     if (currentIndex < tabOrder.length - 1) {
-      setActiveTab(tabOrder[currentIndex + 1]);
+      setActiveTab(tabOrder[currentIndex + 1]); // Move to the next tab
     } else {
-      methods.handleSubmit(onSubmit)();
+      methods.handleSubmit(onSubmit)(); // Submit the form if it's the last tab
     }
   };
 
@@ -281,7 +252,7 @@ export default function TourismForm() {
   const handlePrevious = () => {
     const currentIndex = tabOrder.indexOf(activeTab);
     if (currentIndex > 0) {
-      setActiveTab(tabOrder[currentIndex - 1]);
+      setActiveTab(tabOrder[currentIndex - 1]); // Move to the previous tab
     }
   };
 
@@ -331,7 +302,7 @@ export default function TourismForm() {
                 </TabsContent>
               </Tabs>
               <div className="flex justify-between">
-                {activeTab !== "basic" && (
+                {activeTab !== "basic" && ( // Show "Previous" button only if not on the first tab
                   <Button
                     type="button"
                     variant="outline"
@@ -340,12 +311,8 @@ export default function TourismForm() {
                     Previous
                   </Button>
                 )}
-                <Button type="button" onClick={handleNext} disabled={isLoading}>
-                  {isLoading
-                    ? "Submitting..."
-                    : activeTab === "employees"
-                    ? "Submit"
-                    : "Next"}
+                <Button type="button" onClick={handleNext}>
+                  {activeTab === "employees" ? "Submit" : "Next"}
                 </Button>
               </div>
             </form>

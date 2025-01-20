@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { useFormContext } from "react-hook-form";
@@ -13,45 +13,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { getImagePreview } from "@/services/appwrite";
 
 export default function BasicInfo() {
-  const { register, setValue, watch } = useFormContext();
+  const { register, setValue } = useFormContext();
   const [lguLicenseImage, setLguLicenseImage] = useState(null);
   const [dotAccreditationImage, setDotAccreditationImage] = useState(null);
-  const [lguLicenseFile, setLguLicenseFile] = useState(null);
-  const [dotAccreditationFile, setDotAccreditationFile] = useState(null);
-
-  // Watch for image IDs from form context
-  const lguLicenseImageId = watch("lguLicenseImageId");
-  const dotAccreditationImageId = watch("dotAccreditationImageId");
-
-  useEffect(() => {
-    // Load existing images if IDs are present
-    const loadImages = async () => {
-      if (lguLicenseImageId) {
-        const imageUrl = await getImagePreview(
-          lguLicenseImageId,
-          "6789e834002216f21c5c"
-        );
-        setLguLicenseImage(imageUrl);
-      }
-      if (dotAccreditationImageId) {
-        const imageUrl = await getImagePreview(
-          dotAccreditationImageId,
-          "6789e834002216f21c5c"
-        );
-        setDotAccreditationImage(imageUrl);
-      }
-    };
-    loadImages();
-  }, [lguLicenseImageId, dotAccreditationImageId]);
 
   const handleSelectChange = (value, name) => {
     setValue(name, value);
   };
 
-  const handleImageUpload = (event, setImageFunction, setFileFunction) => {
+  const handleImageUpload = (event, setImageFunction) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -59,7 +31,6 @@ export default function BasicInfo() {
         setImageFunction(reader.result);
       };
       reader.readAsDataURL(file);
-      setFileFunction(file);
     }
   };
 
@@ -252,7 +223,7 @@ export default function BasicInfo() {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
             {lguLicenseImage ? (
               <Image
-                src={lguLicenseImage}
+                src={lguLicenseImage || "/placeholder.svg"}
                 alt="LGU License Certificate"
                 width={300}
                 height={200}
@@ -270,9 +241,7 @@ export default function BasicInfo() {
             <Input
               type="file"
               accept="image/*"
-              onChange={(e) =>
-                handleImageUpload(e, setLguLicenseImage, setLguLicenseFile)
-              }
+              onChange={(e) => handleImageUpload(e, setLguLicenseImage)}
               className="mt-4"
             />
           </div>
@@ -285,7 +254,7 @@ export default function BasicInfo() {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
             {dotAccreditationImage ? (
               <Image
-                src={dotAccreditationImage}
+                src={dotAccreditationImage || "/placeholder.svg"}
                 alt="DOT Accreditation License Certificate"
                 width={300}
                 height={200}
@@ -303,13 +272,7 @@ export default function BasicInfo() {
             <Input
               type="file"
               accept="image/*"
-              onChange={(e) =>
-                handleImageUpload(
-                  e,
-                  setDotAccreditationImage,
-                  setDotAccreditationFile
-                )
-              }
+              onChange={(e) => handleImageUpload(e, setDotAccreditationImage)}
               className="mt-4"
             />
           </div>
