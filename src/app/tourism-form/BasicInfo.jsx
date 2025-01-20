@@ -231,7 +231,7 @@ export default function BasicInfo() {
               />
             ) : (
               <Image
-                src="/placeholder.svg?height=200&width=300"
+                src="/image/certificate.png"
                 alt="LGU License Certificate Placeholder"
                 width={300}
                 height={200}
@@ -254,7 +254,7 @@ export default function BasicInfo() {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
             {dotAccreditationImage ? (
               <Image
-                src={dotAccreditationImage || "/placeholder.svg"}
+                src={dotAccreditationImage || "/image/certificate.png"}
                 alt="DOT Accreditation License Certificate"
                 width={300}
                 height={200}
@@ -262,7 +262,7 @@ export default function BasicInfo() {
               />
             ) : (
               <Image
-                src="/placeholder.svg?height=200&width=300"
+                src="/image/certificate.png"
                 alt="DOT Accreditation License Certificate Placeholder"
                 width={300}
                 height={200}
